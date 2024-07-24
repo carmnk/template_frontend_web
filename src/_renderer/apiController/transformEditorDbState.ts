@@ -147,6 +147,9 @@ export const transformEditorStateFromPayload = (
     xl: alternativeElements.filter((el) => el?.viewport === 'xl'),
   }
 
+  const themes = disableThemeReload
+    ? (data.themes as any)
+    : reloadSerializedThemes(data.themes as any, currentEditorState?.themes)
   return {
     ...currentEditorState,
     defaultTheme: defaultTheme as any,
@@ -161,8 +164,7 @@ export const transformEditorStateFromPayload = (
       })) as any[]) ?? [],
     ui,
     assets: newImageAssets,
-    themes: disableThemeReload
-      ? (data.themes as any)
-      : reloadSerializedThemes(data.themes as any, currentEditorState?.themes),
+    themes,
+    theme: themes.find((theme: any) => theme.palette.mode === defaultTheme),
   }
 }
