@@ -8,11 +8,5 @@ const homepage = pjson.homepage
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [(react as any)()],
-  target: 'esnext',
-  build: {
-    rollupOptions: {
-      external: ['@cmk/fe_utils'],
-    },
-  },
   base: homepage,
 } as any)
