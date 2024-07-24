@@ -1,3 +1,4 @@
+import React from 'react'
 import { useMemo } from 'react'
 import { HtmlRenderer } from './_renderer/renderer/HtmlRenderer'
 import { useEditorController } from './_renderer/editorController/editorController'
@@ -6,6 +7,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { transformEditorStateFromPayload } from './_renderer/apiController/transformEditorDbState'
 import { baseComponents } from './_renderer/editorComponents/baseComponents'
 import { defaultEditorState } from './_renderer/editorController/editorState'
+import packageJson from '../package.json'
 
 console.log('appData', appData)
 
@@ -23,8 +25,8 @@ function App() {
     const adjImages = transformedState.assets.images.map((img) => ({
       ...img,
       image:
-        appData.imageFiles.find((file) => file.asset_id === img._id)?.image ||
-        null,
+        appData?.imageFiles?.find?.((file) => file.asset_id === img._id)
+          ?.image || null,
     }))
     return {
       ...transformedState,
@@ -59,7 +61,7 @@ function App() {
   console.log('appData Adjusted ', appDataAdj)
   return (
     <>
-      <BrowserRouter>
+      <BrowserRouter basename={packageJson?.homepage}>
         <HtmlRenderer
           editorController={editorController}
           theme={theme}

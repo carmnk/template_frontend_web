@@ -19,7 +19,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["node", "jest", "react", "react-dom"],
   },
 
   "include": ["src/**/*.ts"],
