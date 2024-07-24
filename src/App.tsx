@@ -22,30 +22,42 @@ function App() {
 
     // adjust images -> images are currently supposed to be in the json - imageFiles.[n].image
     //CLOUD SOLutioN BACK !!!
-    const adjImages = transformedState.assets.images.map((img) => ({
-      ...img,
-      image:
-        appData?.imageFiles?.find?.((file) => file.asset_id === img._id)
-          ?.image || null,
-    }))
+    const images = transformedState.assets.images
+
+    // this way is for base64 pictures
+    // const adjImages = transformedState.assets.images.map((img) => ({
+    //   ...img,
+    //   image:
+    //     appData?.imageFiles?.find?.((file) => file.asset_id === img._id)
+    //       ?.image || null,
+    // }))
     return {
       ...transformedState,
-      elements: transformedState.elements.map((el) =>
-        el._type === 'img' && el.attributes?.src
+
+      elements: transformedState.elements.map((el) => {
+        const image = images.find((img) => img._id === (el as any)?.attributes?.src)
+        const imageId = image?._id
+        const imageFilename = image?.fileName
+        const imageFilenameExtension = imageFilename?.split('.').pop()
+        const newImageFilename = `${imageId}.${imageFilenameExtension}`
+        const path = packageJson.homepage + '/assets/images/' + newImageFilename
+
+        return el._type === 'img' && el.attributes?.src
           ? {
               ...el,
               attributes: {
                 ...el.attributes,
-                src:
-                  adjImages.find((adjImg) => adjImg._id === el?.attributes?.src)
-                    ?.image || null,
+                src: path,
+
+                // adjImages.find((adjImg) => adjImg._id === el?.attributes?.src)
+                //   ?.image || null,
               },
             }
           : el
-      ),
+      }),
       assets: {
         ...transformedState.assets,
-        images: adjImages,
+        images,
       },
     }
   }, [])
