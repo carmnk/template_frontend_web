@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react'
-import { HtmlRenderer } from '../../html_editor/src/HtmlEditor/renderer/HtmlRenderer'
-import { useEditorController } from '../../html_editor/src/HtmlEditor/editorController/editorController'
+import { useMemo } from 'react'
+import { HtmlRenderer } from './_renderer/renderer/HtmlRenderer'
+import { useEditorController } from './_renderer/editorController/editorController'
 import appData from './app_data.json'
 import { BrowserRouter } from 'react-router-dom'
-import { transformEditorStateFromPayload } from '../../html_editor/src/HtmlEditor/apiController/transformEditorDbState'
-import { baseComponents } from '../../html_editor/src/HtmlEditor/editorComponents/baseComponents'
-import { defaultEditorState } from '../../html_editor/src/HtmlEditor/editorController/editorState'
-import { buttonEditorComponentDef } from '../../html_editor/src/HtmlEditor/editorComponents/components/Button/buttonDef'
+import { transformEditorStateFromPayload } from './_renderer/apiController/transformEditorDbState'
+import { baseComponents } from './_renderer/editorComponents/baseComponents'
+import { defaultEditorState } from './_renderer/editorController/editorState'
 
 console.log('appData', appData)
 
@@ -50,7 +49,7 @@ function App() {
   }, [])
 
   const editorController = useEditorController({
-    initialEditorState: appDataAdj,
+    initialEditorState: appDataAdj as any,
     // injections: {
     //   components: [...baseComponents, buttonEditorComponentDef],
     // },
