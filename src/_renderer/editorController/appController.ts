@@ -11,13 +11,12 @@ export type EditorControllerAppStateParams = {
   // initialAppState?: EditorControllerAppStateType
 }
 
-export const useAppController = (
-  params: EditorControllerAppStateParams
-): EditorControllerAppStateReturnType => {
-  const { editorState, setEditorState } = params
+export const useAppController = (): // params: EditorControllerAppStateParams
+EditorControllerAppStateReturnType => {
+  // const { editorState, setEditorState } = params
   const [appState, setAppState] = useState<EditorControllerAppStateType>({
     forms: {},
-    // tables: {},
+    _data: {},
   })
   // const [stateValues, setStateValues] = useState<any>({})
 
@@ -35,6 +34,7 @@ export const useAppController = (
     }
     const removeProperty = (key: string) => {
       setAppState((current) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [key]: _, ...rest } = current
         return rest as any
       })
@@ -57,12 +57,30 @@ export const useAppController = (
       return appState.forms?.[elementId] ?? {}
     }
 
+    const updateData = (key: string, value: any) => {
+      setAppState((current) => {
+        return {
+          ...current,
+          _data: { ...current._data, [key]: value },
+        }
+      })
+    }
+    const removeData = (key: string) => {
+      setAppState((current) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [key]: _, ...rest } = current
+        return rest as any
+      })
+    }
+
     return {
       getFormData,
       changeFormData,
       addProperty: updateProperty,
       removeProperty,
       updateProperty,
+      updateData,
+      removeData,
     }
   }, [setAppState, appState?.forms])
 

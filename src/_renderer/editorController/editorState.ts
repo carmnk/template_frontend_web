@@ -1,11 +1,55 @@
-import { CSSProperties, HTMLProps } from 'react'
-import { baseHtmlDocument } from '../defs/baseHtmlElements'
+import { CSSProperties } from 'react'
+import { baseHtmlDocument } from './editorStateBaseElements'
 import { ExtendedTheme, muiDarkSiteTheme, muiLightSiteTheme } from '../muiTheme'
-import _, { cloneDeep } from 'lodash'
+import { cloneDeep } from 'lodash'
 import { SYSTEM_FONTS_CSS_STRINGS } from '../defs/CssFontFamilies'
 import { BaseComponentType } from '../editorComponents/baseComponents'
 import { UI_POINTER_MODE } from '../defs/uiPointerMode'
 import { v4 as uuid } from 'uuid'
+import { EditorStateDbDataType } from '../apiController/editorDbStateType'
+
+export type Endpoint = {
+  endpoint_id: string
+  name: string
+  url: string
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  responseType: 'json' | 'text' | 'blob'
+  useCookies: boolean
+  headers: { key: string; value: string }[] // -> subtable
+  params: { key: string; value: string }[] // -> subtable
+  body: { key: string; value: any }[] // -> subtable
+  auth:
+    | { type: 'basic'; username: string; password: string }
+    | { type: 'bearer'; token: string }
+    | { type: 'none' }
+}
+
+export type ExternalApi = {
+  external_api_id: string
+  name: string
+  baseUrl: string
+  auth:
+    | { type: 'basic'; username: string; password: string }
+    | { type: 'bearer'; token: string }
+    | { type: 'none' }
+  headers: { key: string; value: string }[] // -> subtable
+  useCookies: boolean
+  endpoints: Endpoint[]
+}
+
+export type ElementEvent = {
+  event_id: string
+  element_id: string
+  event_name: string
+  action_ids: string[]
+}
+export type Action = {
+  action_id: string
+  action_name: string
+  endpoint_id?: string | null
+  // default_action_id?: string | null
+  // navigation_action_id?: string | null
+}
 
 export type ComponentElementTypes = BaseComponentType['type']
 
@@ -20,17 +64,19 @@ export type GenericElementType<T extends ElementKeyType = ElementKeyType> = {
   _type: T //  -> _
   _disableDelete?: boolean
   _page: string
+  viewport_db_element_id?: string
+  template_id: string | null
 }
 
 export type ComponentElementType<T extends ElementKeyType = 'Button'> =
   GenericElementType<T> & {
-    props?: { [key: string]: any }
+    // props?: { [key: string]: any }
   }
 
 export type ElementType<T extends ElementKeyType = ElementKeyType> =
   T extends keyof HTMLElementTagNameMap
     ? GenericElementType<T> & {
-        attributes?: HTMLProps<HTMLElementTagNameMap[T]> // subtable
+        // attributes?: HTMLProps<HTMLElementTagNameMap[T]> // subtable
       }
     : ComponentElementType<T>
 
@@ -43,7 +89,9 @@ export enum EditorStateLeftMenuTabs {
   Localization = 'localization',
   Theme = 'theme',
   Font = 'font',
+  Templates = 'templates',
   State = 'state',
+  ExternalApi = 'externalApi',
 }
 
 export enum EditorStateLeftMenuGlobalTabs {
@@ -106,6 +154,8 @@ export type ProjectType = {
   default_theme?: string
   selected_entity?: string
   selected_entity_element?: 'fields' | 'lists' | 'values' | 'joinings'
+  github_updated_datetime?: string
+  github_updated_version_edited_datetime?: string
 }
 
 export type ServerConfigType = {
@@ -127,12 +177,21 @@ export type ServerConfigType = {
 
 export type AlternativeViewportElement = ElementType & {
   // _viewportIsElementChanged?: boolean
-  _viewportAreChildrenChanged?: boolean // only direct -> show all tree down to change only for user
+  // _viewportAreChildrenChanged?: boolean // only direct -> show all tree down to change only for user
   viewport_ref_element_id: string
-  // _viewportIsUnchangedChild?: boolean
+}
+
+export type TemplateComponent = {
+  template_id: string
+  template_name: string
+  content: string | null
+  type: string
+  is_default: boolean
+  project_id: string
 }
 
 export type EditorStateType = {
+  templateComponents: TemplateComponent[]
   project: ProjectType
   elements: ElementType[]
   alternativeViewports: {
@@ -150,6 +209,26 @@ export type EditorStateType = {
   themes: ExtendedTheme[]
   fonts: string[] // currently const
   // partly serialize for now
+  properties: (Omit<
+    EditorStateDbDataType['properties'][number],
+    'prop_value' | 'element_id'
+  > & {
+    prop_value: any
+    prop_id: string
+    project_id: string
+    template_id: string | null
+    element_id: string | null
+  })[]
+  attributes: (Omit<
+    EditorStateDbDataType['attributes'][number],
+    'attr_value' | 'element_id'
+  > & {
+    attr_value: any
+    attr_id: string
+    project_id: string
+    template_id: string | null
+    element_id: string | null
+  })[]
   ui: {
     tableUis: {
       [key: string]: {
@@ -159,6 +238,7 @@ export type EditorStateType = {
     }
     initializeProjectModal: boolean
     isProjectInited: boolean
+    isAutoSaveReady: boolean
     pointerMode: UI_POINTER_MODE.mixed | UI_POINTER_MODE.production
     previewMode: boolean
     editDragMode: null | 'leftMenu' | 'rightMenu'
@@ -186,6 +266,7 @@ export type EditorStateType = {
       image: string | null
       font: string | null
       state: string | null
+      externalApi: string | null
       viewport: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
       serverSetting: 'ssl' | 'cors'
       entity: string | null
@@ -208,6 +289,7 @@ export type EditorStateType = {
           marginLeft: number
         }
       } | null
+      template: string | null
     }
     hovering: {
       rightMenu: boolean
@@ -224,7 +306,13 @@ export type EditorStateType = {
         editCssRuleName: string | null
         editCssRuleValue: string | null
         cssRulesFilter: 'all' | 'classes' | 'styles'
-        activeStylesTab: 'layout' | 'shape' | 'typography' | 'content'
+        activeStylesTab:
+          | 'layout'
+          | 'shape'
+          | 'typography'
+          | 'content'
+          | 'events'
+          | 'css_rules'
         classEditMode: boolean
       }
     }
@@ -250,6 +338,9 @@ export type EditorStateType = {
       _entity_joinings: []
     }
   }
+  externalApis: ExternalApi[]
+  events: ElementEvent[]
+  actions: Action[]
 }
 
 export const defaultPageElements = () =>
@@ -276,6 +367,9 @@ export const defaultEditorState = (): EditorStateType => {
       // selected_entity: '',
       // selected_entity_element: 'fields',
     },
+    templateComponents: [],
+    attributes: [],
+    properties: [],
     elements: defaultPageElements(),
     alternativeViewports: {
       sm: [],
@@ -295,6 +389,7 @@ export const defaultEditorState = (): EditorStateType => {
     themes: [muiLightSiteTheme, muiDarkSiteTheme] as any,
 
     ui: {
+      isAutoSaveReady: false,
       initializeProjectModal: true,
       isProjectInited: false,
       tableUis: {},
@@ -318,6 +413,8 @@ export const defaultEditorState = (): EditorStateType => {
         entity: null,
         entityElement: 'fields',
         activeElementBoundingRect: null,
+        externalApi: null,
+        template: null,
       },
       hovering: {
         rightMenu: false,
@@ -375,5 +472,8 @@ export const defaultEditorState = (): EditorStateType => {
         _entity_joinings: [],
       },
     },
+    externalApis: [],
+    events: [],
+    actions: [],
   }
 }

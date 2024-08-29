@@ -1,17 +1,17 @@
-import { ChipProps } from '@mui/material'
+// import { ChipProps } from '@mui/material'
 import { EditorControllerType } from '../../../editorController/editorControllerTypes'
 import { ElementType } from '../../../editorController/editorState'
 import { GenericFormProps } from '@cmk/fe_utils'
 
-type FormDataType = ChipProps
-type ParameterType = {
-  initialFormData?: Partial<FormDataType>
-}
+// type FormDataType = ChipProps
+// type ParameterType = {
+//   initialFormData?: Partial<FormDataType>
+// }
 
-const booleanOptions = [
-  { value: false, label: 'false' },
-  { value: true, label: 'true' },
-]
+// const booleanOptions = [
+//   { value: false, label: 'false' },
+//   { value: true, label: 'true' },
+// ]
 
 const optionsDict = {
   // disabled: booleanOptions,
@@ -66,15 +66,25 @@ export const NavContainerComponentPropsFormFactory = (
 ) => {
   const pageElements = editorController.selectedPageHtmlElements2
   const navElements = pageElements.filter(
-    (el) =>
+    (el: any) =>
       el._type.slice(0, 1).toUpperCase() === el._type.slice(0, 1) &&
       'state' in el
   )
+  const elementAttributes = editorController.editorState.attributes.filter(
+    (attr) => attr.element_id === selectedComponent._id
+  )
+  const elementAttributesDict = elementAttributes.reduce<Record<string, any>>((acc, attr) => {
+    return {
+      ...acc,
+      [attr.attr_name]: attr.attr_value,
+    }
+  }, {})
   const navigationElementIdOptions = navElements.map((el) => ({
     value: el._id,
-    label: el._type + ((el as any).attributes?.id ?? ''),
+    label: el._type + elementAttributesDict?.id ?? '',
   }))
 
+  console.log('OPTIONS NAV ELEMENT , ', optionsDict, navigationElementIdOptions)
   return generateFormProps({
     optionsDict,
     initialFormData: {
@@ -154,6 +164,27 @@ export const ItemPropsFormFactory = (
           //     label: tab.label,
           //   })
           // )
+          console.log(
+            'NavContainerPropFormFactory.ts - value Options',
+            navItemOptions
+          )
+          console.log(
+            'NavContainerPropFormFactory.ts - value Options - filtered opts',
+            navigationElement,
+            editorController?.currentViewportElements,
+            'rootFormData',
+            rootFormData,
+            'formData',
+            formData,
+            'EditorController',
+            editorController,
+            'NEW APPROACH',
+            selectedElementId,
+            isSelectedElementNavContainer,
+            selectedElement,
+            navigationElement,
+            navItemOptions
+          )
           return navItemOptions ?? []
         },
         childId: (formData: any, rootFormData: any) => {

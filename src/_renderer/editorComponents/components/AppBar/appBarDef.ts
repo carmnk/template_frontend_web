@@ -1,11 +1,11 @@
 import { mdiDockTop } from '@mdi/js'
 import { propertyFormFactory } from '../../propertiesFormFactory'
 import { appBarPropsSchema } from './appBarPropsRawSchema'
-import { AppBar } from '@mui/material'
-import { HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS } from '../../../defs/HTMLTagNamesDict'
 import { AppBarWrapper } from './AppBarWrapper'
+import { EditorControllerType } from '../../../editorController/editorControllerTypes'
+import { ComponentDefType } from '../../componentDefType'
 
-export const appBarDef = {
+export const appBarDef: ComponentDefType = {
   //   ...paperDef,
   type: 'AppBar' as const,
   props: {
@@ -16,15 +16,19 @@ export const appBarDef = {
     children: [],
   },
 
-  formGen: () =>
-    propertyFormFactory(appBarPropsSchema, {
-      dynamicOptionsDict: {
-        component: [
-          { value: undefined, label: 'Default (depends on variant)' },
-          ...HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS,
-        ],
-      },
-    }),
+  formGen: (editorController: EditorControllerType) =>
+    propertyFormFactory(
+      appBarPropsSchema,
+      editorController
+      //   {
+      //   dynamicOptionsDict: {
+      //     component: [
+      //       { value: undefined, label: 'Default (depends on variant)' },
+      //       ...HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS,
+      //     ],
+      //   },
+      // }
+    ),
   icon: mdiDockTop,
   category: 'surface',
   schema: appBarPropsSchema,

@@ -6,6 +6,7 @@ import {
   ElementType,
 } from './editorState'
 import { baseComponents } from '../editorComponents/baseComponents'
+
 export const getInitialStyles = (): React.CSSProperties => {
   return {
     display: 'block',
@@ -23,8 +24,11 @@ const getRecursiveChildren = (
   parentId: string
 ): ElementType[] => {
   const children = elements.filter((el) => el._parentId === parentId)
-  return children
-    .map((child) => [child, ...getRecursiveChildren(elements, child._id)])
+  return (children as any)
+    .map((child: any) =>
+      child._id ? [child, ...getRecursiveChildren(elements, child._id)] : null
+    )
+    .filter((val: any) => val)
     .flat()
 }
 
@@ -44,16 +48,12 @@ export const useShortcuts = (params: {
       baseviewElements as any
     for (let v = 0; v < viewportElements.length; v++) {
       const viewportElement = viewportElements[v]
-      const baseviewElementChildrenToRemove =
-        viewportElement?._viewportAreChildrenChanged
-          ? getRecursiveChildren(editorState.elements, viewportElement._id)
-          : null
-      const viewportElementChildren =
-        viewportElement?._viewportAreChildrenChanged
-          ? viewportElements.filter(
-              (el) => el._parentId === viewportElement._id
-            )
-          : []
+      const baseviewElementChildrenToRemove = viewportElement
+        ? getRecursiveChildren(editorState.elements, viewportElement._id)
+        : null
+      const viewportElementChildren = viewportElement
+        ? viewportElements.filter((el) => el._parentId === viewportElement._id)
+        : []
       currentViewportsElements = currentViewportsElements.map((el) => {
         if (el._id === viewportElement._id) {
           return viewportElement
@@ -82,7 +82,7 @@ export const useShortcuts = (params: {
 
   const selectedHtmlElement = useMemo(() => {
     const id = editorState?.ui.selected.element
-    return currentViewportElements?.find((el) => el._id === id) ?? null
+    return currentViewportElements?.find((el) => el._id === id && id) ?? null
   }, [editorState.ui.selected.element, currentViewportElements])
 
   const selectedPageHtmlElements2 = useMemo(() => {
@@ -91,20 +91,30 @@ export const useShortcuts = (params: {
       currentViewportElements?.filter((el) => el._page === selectedPage) ?? []
     )
   }, [editorState.ui.selected.page, currentViewportElements])
-  /* eslint-enable react-hooks/exhaustive-deps */
 
   const selectedHtmlElementStyleAttributes2 = useMemo(() => {
-    const className = (selectedHtmlElement as ElementType<'div'>)?.attributes
-      ?.className
+    const elementAttributes = editorState.attributes.filter(
+      (attr) => attr.element_id === editorState.ui.selected.element
+    )
+    const elementAttributesDict = elementAttributes.reduce<Record<string, any>>(
+      (acc, attr) => {
+        return {
+          ...acc,
+          [attr.attr_name]: attr.attr_value,
+        }
+      },
+      {}
+    )
+    const className = elementAttributesDict?.className
     return {
       ...getInitialStyles(),
       ...getStylesFromClasses(className ?? '', editorState?.cssSelectors),
-      ...((selectedHtmlElement as any)?.attributes?.style ?? {}),
+      ...(elementAttributesDict?.style ?? {}),
     }
   }, [
-    selectedHtmlElement,
     editorState.cssSelectors,
-    (selectedHtmlElement as ElementType<'div'>)?.attributes?.className,
+    editorState.ui.selected.element,
+    editorState.attributes,
   ])
 
   const getSelectedImage = useCallback(

@@ -1,4 +1,4 @@
-import { PropertyType, ExtendedObjectSchemaType } from '../../rawSchema'
+import { PropertyType, ExtendedObjectSchemaType } from '../../schemaTypes'
 
 // raw schema to use until schema can be generated reliably from typescript parser/checker
 export const paperPropsSchema: ExtendedObjectSchemaType = {

@@ -1,23 +1,26 @@
-import {
+import React, {
   CSSProperties,
-  HTMLProps,
   PropsWithChildren,
   MouseEvent,
   useMemo,
+  useEffect,
+  useRef,
 } from 'react'
 import { ElementType } from '../editorController/editorState'
-import { Box, useTheme } from '@mui/material'
-import { useElementHover } from '../hooks/useElementHover'
+import { Box } from '@mui/material'
 import { EditorStateType } from '../editorController/editorState'
 import { getStylesFromClasses } from './getStylesFromClasses'
 import { useNavigate } from 'react-router-dom'
+import { EditorControllerType } from '../editorController/editorControllerTypes'
+import { queryAction } from './queryAction'
 
 export type ElementBoxProps = {
   element: ElementType
   editorState: EditorStateType
+  onSelectElement: (element: ElementType, isHovering: boolean) => void
   isProduction?: boolean
   isPointerProduction?: boolean
-  appController: any
+  appController: EditorControllerType['appController']
 }
 
 const sx = {
@@ -25,18 +28,30 @@ const sx = {
 }
 
 export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
-  const { element, children, editorState, isProduction, isPointerProduction } =
-    props
-  const theme = useTheme()
+  const {
+    element,
+    children,
+    editorState,
+    isProduction,
+    isPointerProduction,
+    appController,
+  } = props
   const navigate = useNavigate()
 
-  const { callbackRef: ref } = useElementHover({
-    disabled: true, //isProduction || isPointerProduction,
-  })
-  const isHovering = false
+  const elementAttributs = editorState.attributes.filter(
+    (attr) => attr.element_id === element._id
+  )
+  const elementAttributsDict = elementAttributs.reduce<Record<string, any>>(
+    (acc, attr) => {
+      return {
+        ...acc,
+        [attr.attr_name]: attr.attr_value,
+      }
+    },
+    {}
+  )
 
-  const className =
-    'attributes' in element ? element?.attributes?.className : undefined
+  const className = elementAttributsDict?.className
   const stylesFromClasses = getStylesFromClasses(
     className ?? '',
     editorState?.cssSelectors
@@ -44,12 +59,12 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
 
   const styles = useMemo(() => {
     const linkHoverStyles =
-      element._type === 'a' && (element as any)?.attributes?.href
+      element._type === 'a' && elementAttributsDict?.href
         ? { cursor: 'pointer' }
         : {}
 
     const styleAttributes =
-      'attributes' in element ? element?.attributes?.style ?? {} : {}
+      'style' in elementAttributsDict ? elementAttributsDict?.style ?? {} : {}
 
     const aggregatedUserStyles = {
       ...stylesFromClasses,
@@ -106,14 +121,11 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
       //   backgroundColor: "rgba(0,150,136,0.1)",
     } as CSSProperties
   }, [
-    // isHovering,
-    // editorState.ui.selected.element,
-    // theme,
     stylesFromClasses,
     isProduction,
-    // isPointerProduction,
     element,
     editorState.ui.previewMode,
+    elementAttributsDict,
   ])
 
   // useEffect(() => {
@@ -121,14 +133,14 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
   // }, [isHovering, element, onSelectElement]);
 
   const isOverheadHtmlElement = ['html', 'head', 'body'].includes(element._type)
-  const elementAttributs =
-    'attributes' in element
-      ? (element?.attributes as HTMLProps<HTMLLinkElement> & {
-          href: string
-        })
-      : ({} as HTMLProps<HTMLLinkElement>)
+  // const elementAttributs =
+  //   'attributes' in element
+  //     ? (element?.attributes as HTMLProps<HTMLLinkElement> & {
+  //         href: string
+  //       })
+  //     : ({} as HTMLProps<HTMLLinkElement>)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { style, href, ...styleLessAttributes } = elementAttributs ?? {}
+  const { style, href, ...styleLessAttributes } = elementAttributsDict ?? {}
 
   const boxProps = useMemo(
     () => ({
@@ -148,39 +160,126 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
       return {
         onClick: (e: MouseEvent<HTMLAnchorElement, MouseEvent>) => {
           e.preventDefault()
-          const attributes =
-            element.attributes as HTMLProps<HTMLLinkElement> & {
-              href: string
-            }
+          // const attributes = (element as any)
+          //   .attributes as HTMLProps<HTMLLinkElement> & {
+          //   href: string
+          // }
 
-          const isExternalLink = !attributes?.href?.startsWith('/')
+          const isExternalLink = !elementAttributsDict?.href?.startsWith('/')
           if (isExternalLink) {
-            window.open(attributes?.href, '_blank')
+            window.open(elementAttributsDict?.href, '_blank')
           } else {
             // const
-            const href = attributes?.href === '/index' ? '/' : attributes?.href
+            const href =
+              elementAttributsDict?.href === '/index'
+                ? '/'
+                : elementAttributsDict?.href
             navigate(href ?? '')
           }
         },
       }
     }
     return {}
-  }, [element, navigate])
+  }, [element, navigate, elementAttributsDict])
+
+  const elementRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const elementEvents = editorState?.events?.filter(
+      (event) => event.element_id === element._id
+    )
+    if (!elementEvents?.length) {
+      return
+    }
+    const eventHandlers = elementEvents.map((event) => {
+      const eventName = event.event_name.slice(2)
+      const actions = editorState?.actions?.filter((act) =>
+        event?.action_ids?.includes(act.action_id)
+      )
+      const apiEndpoints = editorState?.externalApis
+        ?.map((api) =>
+          api.endpoints?.map((ep) => ({ ...ep, api_id: api.external_api_id }))
+        )
+        .flat()
+      const endpoints2 = apiEndpoints.filter((ep) =>
+        actions.map((a) => a?.endpoint_id).includes(ep.endpoint_id)
+      )
+
+      const eventHandler = async (e: any) => {
+        const responses: any[] = []
+        for (let e = 0; e < endpoints2?.length; e++) {
+          const endpoint = endpoints2[e]
+          const api = editorState?.externalApis?.find(
+            (api) => api.external_api_id === endpoint.api_id
+          )
+          const url = (api?.baseUrl ?? '') + (endpoint?.url ?? '')
+          const doQueryAction = async () => {
+            const action = editorState.actions.find(
+              (act) => act.endpoint_id === endpoint.endpoint_id
+            )
+            return await queryAction(
+              appController,
+              action?.action_id ?? '', // should never happen -> should always have action
+              endpoint?.method,
+              url,
+              !!endpoint?.useCookies,
+              endpoint?.body,
+              endpoint?.headers,
+              endpoint?.params,
+              endpoint?.responseType,
+              endpoint?.auth.type === 'basic'
+                ? {
+                    username: endpoint.auth.username,
+                    password: endpoint.auth.password,
+                  }
+                : undefined
+            )
+          }
+
+          const response = await doQueryAction()
+          responses.push(response)
+        }
+        return responses
+      }
+      if (!['Unmounted', 'Mounted'].includes(eventName)) {
+        elementRef.current?.addEventListener(eventName, eventHandler)
+      }
+      if (eventName === 'Mounted') {
+        eventHandler({ element_id: element._id })
+      }
+      return eventHandler
+    })
+
+    return () => {
+      elementEvents.forEach((event, eIdx) => {
+        const eventName = event.event_name.slice(2)
+        if (!['Unmounted', 'Mounted'].includes(eventName)) {
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+          elementRef.current?.removeEventListener(
+            eventName,
+            eventHandlers[eIdx]
+          )
+        }
+        if (eventName === 'Unmounted') {
+          eventHandlers[eIdx]({ element_id: element._id })
+        }
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorState?.events])
 
   return ['br', 'hr', 'img'].includes(element?._type) ? (
-    <Box {...boxProps} {...linkProps} />
+    <Box {...boxProps} {...linkProps} ref={elementRef} />
   ) : (
     <Box
       {...linkProps}
       {...boxProps}
+      ref={elementRef}
       // {...uiEditorHandlers}
     >
       {/* label */}
       {!(isProduction || isPointerProduction) &&
         ((
           <Box
-            // onMouseOver={() => {}}
-            // onMouseOut={() => {}}
             sx={{
               display: 'none',
               position: 'absolute',

@@ -1,15 +1,11 @@
 import { ChangeEvent, Dispatch, SetStateAction, useMemo } from 'react'
 import { EditorStateType } from '../editorState'
 import { defaultEditorState, defaultPageElements } from '../editorState'
-import { isEqual, uniq } from 'lodash'
+import { uniq } from 'lodash'
 import { transformEditorStateFromPayload } from '../../apiController/transformEditorDbState'
 import { transformEditorStateToPayload } from '../../apiController/transformEditorState'
 import { EditorControllerType } from '../editorControllerTypes'
 import { v4 as uuid } from 'uuid'
-import {
-  getRecursiveDeviatingKeys,
-  makeComparableEditorState,
-} from '../../apiController/utils'
 import { toBase64 } from '../../utils/file'
 
 export type useEditorControllerProjectActionsParams = {
@@ -36,6 +32,10 @@ export const useEditorControllerProjectActions = (
           image: imageBase64,
         })
       }
+      // editorState.assets.images.map((image) => ({
+      //   ...image,
+      //   image: toBase64(image.image as unknown as File),
+      // }))
       const editStateAdj = {
         ...editorState,
         assets: {
@@ -51,22 +51,6 @@ export const useEditorControllerProjectActions = (
         return
       }
 
-      // const editorStateBack = transformEditorStateFromPayload(
-      //   editorDbState,
-      //   defaultEditorState(),
-      //   components,
-      //   false
-      // )
-
-      // const editorStateCompare = makeComparableEditorState(editStateAdj)
-      // const editorStateBackCompare = makeComparableEditorState(editorStateBack)
-
-      // const isEqualEditorState = isEqual(editorStateCompare, {
-      //   ...editorStateBackCompare,
-      //   abc: 13,
-      // })
-
-      // return
       const filenameExExtension =
         editorState?.project?.project_name ?? 'project'
       const filename = `${filenameExExtension}.json`
@@ -358,7 +342,7 @@ export const useEditorControllerProjectActions = (
       changeHtmlPagesDescription,
       handleChangeProjectType,
     }
-  }, [currentViewportElements, editorState, setEditorState])
+  }, [currentViewportElements, editorState, setEditorState, components])
 
   return actions
 }

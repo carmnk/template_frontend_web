@@ -1,5 +1,3 @@
-import { mdiNoteOutline, mdiRectangleOutline } from '@mdi/js'
-import { NavContainerComponentPropsFormFactory } from './components/NavigationContainer/NavContainerPropFormFactory'
 import { buttonEditorComponentDef } from './components/Button/buttonDef'
 import { buttonGroupEditorComponentDef } from './components/ButtonGroup/buttonGroupDef'
 import { listNavEditorComponentDef } from './components/ListNav/listNavDef'
@@ -10,18 +8,16 @@ import { chipEditorComponentDef } from './components/Chip/chipDef'
 import { typographyEditorComponentDef } from './components/Typography/typographyDef'
 import { tableEditorComponentDef } from './components/Table/TableDef'
 import { formEditorComponentDef } from './components/Form/formDef'
+import { ComponentDefType } from './componentDefType'
+import { navigationContainerDef } from './components/NavigationContainer/navigationContainerDef'
+import { paperDef } from './components/Paper/paperDef'
 
 export const baseComponents = [
   typographyEditorComponentDef,
   chipEditorComponentDef,
   // surface components
   appBarDef,
-  {
-    // to be seperated!
-    ...appBarDef,
-    type: 'Paper' as const,
-    icon: mdiNoteOutline,
-  },
+  paperDef,
 
   // Navigation components
   buttonEditorComponentDef,
@@ -34,20 +30,8 @@ export const baseComponents = [
   formEditorComponentDef,
 
   // Navigation container, currently treated specially/hardcoded (use for generic?)
-  {
-    type: 'NavContainer' as const,
-    props: {
-      // children: "test",
-      // noWrap: false,
-      // align: "inherit",
-      navigationElementId: null,
-      children: [],
-    },
-    formGen: NavContainerComponentPropsFormFactory,
-    icon: mdiRectangleOutline,
-    category: 'navigation',
-  },
-]
+  navigationContainerDef,
+] satisfies ComponentDefType[]
 
 export type BaseComponentsType = typeof baseComponents
 export type BaseComponentType = BaseComponentsType[number]

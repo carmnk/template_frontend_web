@@ -1,7 +1,8 @@
-import { iconNames } from '../../../defs/icons'
-import { PropertyType, ExtendedObjectSchemaType } from '../../rawSchema'
+import { iconNames } from '../../../defs/mdiIcons'
+import { PropertyType, ExtendedObjectSchemaType } from '../../schemaTypes'
 import { buttonEditorComponentDef } from '../Button/buttonDef'
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const {
   icon,
   endIcon,
@@ -13,6 +14,7 @@ const {
   label,
   name,
   ...buttonSchema
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 } = buttonEditorComponentDef.schema.properties
 
 // raw schema to use until schema can be generated reliably from typescript parser/checker

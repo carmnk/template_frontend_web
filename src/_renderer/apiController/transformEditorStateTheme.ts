@@ -1,10 +1,9 @@
 import { v4 as uuid } from 'uuid'
-import { ExtendedTheme } from '../muiTheme'
 import { createMuiTheme } from '../createTheme'
-import { SerializedThemeType } from './types'
+import { SerializedThemeType } from './editorDbStateType'
 
 export const transformEditorStateTheme = (
-  themes: ExtendedTheme[],
+  themes: any[],
   project_id: string
 ): SerializedThemeType[] =>
   themes?.map?.((theme) => ({
@@ -53,8 +52,8 @@ export const transformEditorStateTheme = (
 
 export const reloadSerializedThemes = (
   themesIn: SerializedThemeType[],
-  themes: ExtendedTheme[]
-): ExtendedTheme[] => {
+  themes: any[]
+): any[] => {
   const loadedThemes = themesIn?.map((themeIn) => {
     const currentThemeProps = themes.find(
       (t) => t.palette.mode === themeIn.mode
@@ -141,6 +140,11 @@ export const reloadSerializedThemes = (
     //   factor: 2,
     // })
     // const theme = { ...muiTheme, name: themeIn.name, id: themeIn.id }
+    // console.log('newThemeStatic ', {
+    //     ...newThemeStatic,
+    //     name: themeIn.name,
+    //     id: themeIn.id,
+    //   }, themes)
     const muiTheme = {
       ...createMuiTheme({
         ...newThemeStatic,

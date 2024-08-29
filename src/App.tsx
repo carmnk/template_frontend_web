@@ -18,7 +18,7 @@ function App() {
       defaultEditorState(),
       baseComponents
     )
-    // console.log('TRANSFORM', appData, transformedState)
+    
 
     // adjust images -> images are currently supposed to be in the json - imageFiles.[n].image
     //CLOUD SOLutioN BACK !!!
@@ -64,12 +64,14 @@ function App() {
     }
   }, [])
 
+  console.log('IN', appData)
   const editorController = useEditorController({
     initialEditorState: appDataAdj as any,
     // injections: {
     //   components: [...baseComponents, buttonEditorComponentDef],
     // },
   })
+  console.log('OUT', editorController)
   const theme = editorController.editorState.theme
 
   return (

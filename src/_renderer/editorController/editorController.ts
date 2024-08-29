@@ -61,21 +61,7 @@ export const useEditorController = (params?: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // only run once
 
-  // console.log(
-  //   'CHECK ELEMENTS - BASEVIEW elements: ',
-  //   editorState.elements,
-  //   'currentViewportElements: ',
-  //   currentViewportElements,
-  //   'specific viewport DELTA-elements:',
-  //   editorState.ui.selected.viewport === 'xs'
-  //     ? null
-  //     : editorState.alternativeViewports[editorState.ui.selected.viewport]
-  // )
-
-  const appController = useAppController({
-    editorState,
-    setEditorState,
-  })
+  const appController = useAppController()
 
   const actions = useEditorActions({
     editorState,

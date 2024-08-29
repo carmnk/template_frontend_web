@@ -1,6 +1,6 @@
 import { CSS_RULE_NAMES_DICT_FULL } from '../../../defs/CssRulesNamesDictFull'
-import { iconNames } from '../../../defs/icons'
-import { PropertyType, ExtendedObjectSchemaType } from '../../rawSchema'
+import { iconNames } from '../../../defs/mdiIcons'
+import { PropertyType, ExtendedObjectSchemaType } from '../../schemaTypes'
 
 // raw schema to use until schema can be generated reliably from typescript parser/checker
 export const ListNavPropsSchema: ExtendedObjectSchemaType = {

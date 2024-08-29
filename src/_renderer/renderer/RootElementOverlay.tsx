@@ -1,5 +1,5 @@
-import { Box, Paper, Typography, useTheme } from '@mui/material'
-import {
+import { Box, Paper, useTheme } from '@mui/material'
+import React, {
   useRef,
   useCallback,
   useEffect,
@@ -12,18 +12,18 @@ import { Button, Flex } from '@cmk/fe_utils'
 import { mdiBorderInside, mdiBorderOutside, mdiSort } from '@mdi/js'
 import { EditorControllerType } from '../editorController/editorControllerTypes'
 
-const anchorOrigin = {
-  vertical: 'top' as const,
-  horizontal: 'right' as const,
-}
-const transformOrigin = {
-  vertical: 'bottom' as const,
-  horizontal: 'left' as const,
-}
+// const anchorOrigin = {
+//   vertical: 'top' as const,
+//   horizontal: 'right' as const,
+// }
+// const transformOrigin = {
+//   vertical: 'bottom' as const,
+//   horizontal: 'left' as const,
+// }
 
-const stopPropagation = (e: MouseEvent) => {
-  e.stopPropagation()
-}
+// const stopPropagation = (e: MouseEvent) => {
+//   e.stopPropagation()
+// }
 
 export type RootElementOverlayProps = {
   editorController: EditorControllerType
@@ -43,16 +43,16 @@ export const RootElementOverlay = (props: RootElementOverlayProps) => {
     editorController,
     isProduction,
   } = props
-  const { editorState, actions, currentViewportElements } = editorController
+  const { editorState, actions } = editorController
   const elementId = element._id
   const theme = useTheme()
   const overlayRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [openMenu, setOpenMenu] = useState(false)
 
-  const handleMenuClose = useCallback(() => {
-    setOpenMenu(false)
-  }, [])
+  // const handleMenuClose = useCallback(() => {
+  //   setOpenMenu(false)
+  // }, [])
 
   const handleToggleMenu = useCallback((e: any) => {
     e.stopPropagation()
@@ -60,6 +60,7 @@ export const RootElementOverlay = (props: RootElementOverlayProps) => {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const onHover = (e: any) => {
       // e.stopPropagation()
       onIsHoveringChange?.(elementId, true)
@@ -76,6 +77,7 @@ export const RootElementOverlay = (props: RootElementOverlayProps) => {
     overlayRef.current?.addEventListener('pointerleave', onMouseOut)
     return () => {
       overlayRef.current?.removeEventListener('pointerenter', onHover)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       overlayRef.current?.removeEventListener('pointerleave', onMouseOut)
     }
   }, [onIsHoveringChange, elementId])
@@ -170,14 +172,23 @@ export const RootElementOverlay = (props: RootElementOverlayProps) => {
   const outerBoxModelBoxStyles = useMemo(() => {
     const selectedElementId = editorState?.ui?.selected?.element
     if (!selectedElementId || element._id !== selectedElementId) return null
-    const selectedElement = currentViewportElements.find(
-      (el) => el._id === selectedElementId
+    // const selectedElement = currentViewportElements.find(
+    //   (el) => el._id === selectedElementId
+    // )
+    const attributes = editorState.attributes.filter(
+      (attr) => attr.element_id === selectedElementId
     )
-    const attributes =
-      selectedElement &&
-      'attributes' in selectedElement &&
-      selectedElement?.attributes
-    const style = (attributes as any)?.style
+    const attributesDict = attributes.reduce<Record<string, any>>(
+      (acc, attr) => {
+        return {
+          ...acc,
+          [attr.attr_name]: attr.attr_value,
+        }
+      },
+      {}
+    )
+
+    const style = attributesDict?.style
     if (!style) return null
 
     const {
@@ -204,19 +215,27 @@ export const RootElementOverlay = (props: RootElementOverlayProps) => {
         parseFloat(marginBottom?.toString?.()?.replaceAll('px', ''))
       }px)`,
     }
-  }, [editorState?.ui?.selected?.element, currentViewportElements, element._id])
+  }, [editorState?.ui?.selected?.element, element._id, editorState.attributes])
 
   const innerBoxModelBoxStyles = useMemo(() => {
     const selectedElementId = editorState?.ui?.selected?.element
     if (!selectedElementId || element._id !== selectedElementId) return null
-    const selectedElement = currentViewportElements.find(
-      (el) => el._id === selectedElementId
+    // const selectedElement = currentViewportElements.find(
+    //   (el) => el._id === selectedElementId
+    // )
+    const attributes = editorState.attributes.filter(
+      (attr) => attr.element_id === selectedElementId
     )
-    const attributes =
-      selectedElement &&
-      'attributes' in selectedElement &&
-      selectedElement?.attributes
-    const style = (attributes as any)?.style
+    const attributesDict = attributes.reduce<Record<string, any>>(
+      (acc, attr) => {
+        return {
+          ...acc,
+          [attr.attr_name]: attr.attr_value,
+        }
+      },
+      {}
+    )
+    const style = attributesDict?.style
     if (!style) return null
 
     const {
@@ -244,7 +263,7 @@ export const RootElementOverlay = (props: RootElementOverlayProps) => {
         parseFloat(paddingBottom?.toString?.()?.replaceAll('px', ''))
       }px)`,
     }
-  }, [editorState?.ui?.selected?.element, currentViewportElements, element._id])
+  }, [editorState?.ui?.selected?.element, element._id, editorState.attributes])
 
   return isProduction || editorState.ui.pointerMode === 'production' ? null : (
     <Box

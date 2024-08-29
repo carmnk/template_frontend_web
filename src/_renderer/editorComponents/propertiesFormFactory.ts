@@ -1,8 +1,11 @@
+import { HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS } from '../defs/HTMLTagNamesDict'
+import { EditorControllerType } from '../editorController/editorControllerTypes'
+import { EditorStateType } from '../editorController/editorState'
 import {
   ExtendedArraySchemaType,
   ExtendedObjectSchemaType,
   PropertyType,
-} from './rawSchema'
+} from './schemaTypes'
 import {
   GenericFormProps,
   InputFieldType,
@@ -35,6 +38,8 @@ const convertSchemaToFormType = (
       return 'json'
     case PropertyType.Array:
       return 'array'
+    case PropertyType.eventHandler:
+      return 'multiselect'
     default:
       return 'text'
   }
@@ -70,6 +75,8 @@ const convertPropertiesToFields = (
       type:
         doOverrideSelectType && prop?.type === PropertyType.icon
           ? 'autocomplete'
+          : doOverrideSelectType && prop?.type === PropertyType.eventHandler
+          ? 'multiselect'
           : doOverrideSelectType
           ? 'select'
           : convertSchemaToFormType(prop.type),
@@ -88,10 +95,15 @@ const convertPropertiesToFields = (
 
 const extractInjectionOptionsFromProperties = (
   properties: ExtendedObjectSchemaType['properties'],
-  injectionsIn?: DynamicFormInjectionsType
+  injectionsIn?: DynamicFormInjectionsType,
+  actionsOptions?: { [key: string]: any }
 ) => {
   return Object.keys(properties).reduce((acc, propKey) => {
-    const injectedDynamicOptions = injectionsIn?.dynamicOptionsDict?.[propKey]
+    const injectedDynamicOptions = Object.keys(actionsOptions ?? {}).includes(
+      propKey
+    )
+      ? actionsOptions?.[propKey]
+      : injectionsIn?.dynamicOptionsDict?.[propKey]
     const prop = properties[propKey]
     const propOptions = injectedDynamicOptions?.length
       ? {
@@ -129,11 +141,51 @@ export type DynamicFormInjectionsType = {
   }
 }
 
+const getEpActions = (editorState: EditorStateType) => {
+  return editorState.externalApis
+    .map((api) =>
+      api.endpoints.map((ep) => ({ ...ep, api_id: api.external_api_id }))
+    )
+    .flat()
+    .map((ep) => ({
+      // IMPORTANT - if action_id is not present --> value is endpoint_id
+      ...ep,
+      value:
+        editorState.actions.find((act) => act.endpoint_id === ep.endpoint_id)
+          ?.action_id ?? ep.endpoint_id,
+      endpoint_id: ep.endpoint_id,
+      label: ep.name,
+      textLabel: ep.name,
+      action_id: editorState.actions.find(
+        (act) => act.endpoint_id === ep.endpoint_id
+      )?.action_id,
+      // need the actions / action_id
+    }))
+}
+
+/** needed for the menu */
 export const propertyFormFactory = (
   propObjectSchema: ExtendedObjectSchemaType,
+  editorController: EditorControllerType,
   injectionsIn?: DynamicFormInjectionsType // ??? to be checked if suitable,
+  // actionsOptions: { [key: string]: any } = {}
 ): Omit<GenericFormProps, 'formData' | 'onChangeFormData'> => {
   const properties = propObjectSchema.properties
+  // const elementEvents = editorController.editorState?.events?.filter(
+  //   (event) => event.element_id === element._id
+  // )
+  const schemaEventNames = Object.keys(propObjectSchema.properties).filter(
+    (key) => propObjectSchema.properties[key].type === PropertyType.eventHandler
+  )
+  const eventKeysDict = schemaEventNames.reduce<{
+    [key: string]: ReturnType<typeof getEpActions>
+  }>((acc, key) => {
+    return {
+      ...acc,
+      [key]: getEpActions(editorController.editorState),
+    }
+  }, {})
+
   const injections: GenericFormProps['injections'] = {
     initialFormData: Object.keys(properties).reduce((acc, propKey) => {
       const defaultValue = properties[propKey].form?.defaultValue
@@ -153,7 +205,14 @@ export const propertyFormFactory = (
           }
         : acc
     }, {}),
-    keysDict: injectionsIn?.dynamicKeysDict,
+    keysDict: {
+      component: [
+        { value: undefined, label: 'Default (depends on variant)' },
+        ...HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS,
+      ],
+      // ...(eventKeysDict ?? {}),
+      ...(injectionsIn?.dynamicKeysDict ?? {}),
+    },
     disabled: Object.keys(properties).reduce((acc, propKey) => {
       const isDisabled = properties[propKey].form?.disabled
       return isDisabled
@@ -163,7 +222,11 @@ export const propertyFormFactory = (
           }
         : acc
     }, {}),
-    options: extractInjectionOptionsFromProperties(properties, injectionsIn),
+    options: extractInjectionOptionsFromProperties(
+      properties,
+      injectionsIn,
+      eventKeysDict
+    ),
     onBeforeChange: (newFormDataIn, prevFormData, changedKey, changedValue) => {
       const newFormData =
         injectionsIn?.onBeforeChange?.(
@@ -174,8 +237,56 @@ export const propertyFormFactory = (
         ) ?? newFormDataIn
       // must be a json type
       if (!['sx'].includes(changedKey)) {
+        if (schemaEventNames.includes(changedKey)) {
+          if (!editorController.editorState.ui.selected.element) {
+            return newFormData
+          }
+          // currently new actions without action_id are exclusively endpoint_ids (FUTURE - also new actions)
+          const newEndpointIds = changedValue?.filter(
+            (val: string) =>
+              !editorController.editorState.actions.find(
+                (act) => act.action_id === val
+              )
+          ) // if not found they are new and endpoint_ids
+          const removedActionIds =
+            prevFormData?.[changedKey]?.filter?.(
+              (val: string) =>
+                !changedValue?.includes(val) &&
+                editorController.editorState.actions.find(
+                  (act) => act.action_id === val
+                )
+            ) ?? [] // prevFormData?.onClick can be undefined
+          editorController.actions.events.htmlEvents.changeComponentActions(
+            editorController.editorState.ui.selected.element,
+            newEndpointIds,
+            removedActionIds
+          )
+          console.log(
+            'new FormData - onClick',
+            newFormData,
+            changedKey,
+            changedValue
+          )
+          console.log('NEW EP Ids ', newEndpointIds)
+          console.log('NEW REMOVED ACTIONS ', removedActionIds)
+          return {
+            ...(newFormData ?? {}),
+            [changedKey]: changedValue.filter(
+              (val: any) =>
+                ![...newEndpointIds, ...removedActionIds].includes(val)
+            ),
+          }
+        }
+
         return newFormData
       }
+      // console.log(
+      //   'BEFORE CHANGE',
+      //   newFormData,
+      //   prevFormData,
+      //   changedKey,
+      //   changedValue
+      // )
       const oldProps = Object.keys(prevFormData[changedKey])
       const newProps = Object.keys(changedValue)
       const isPropAdded = newProps.find((prop) => !oldProps.includes(prop))
@@ -250,7 +361,9 @@ export const propertyFormFactory = (
           required: {},
           disabled: {},
           options: extractInjectionOptionsFromProperties(
-            (obj as any).properties
+            (obj as any).properties,
+            undefined,
+            eventKeysDict
           ),
         },
       },
@@ -264,8 +377,11 @@ export const propertyFormFactory = (
             //   initialFormData: injections.initialFormData?.items,
             required: {},
             disabled: {},
-            options:
-              extractInjectionOptionsFromProperties(itemsArrayProperties),
+            options: extractInjectionOptionsFromProperties(
+              itemsArrayProperties,
+              undefined,
+              eventKeysDict
+            ),
           },
         },
       }
@@ -280,7 +396,9 @@ export const propertyFormFactory = (
           required: {},
           disabled: {},
           options: extractInjectionOptionsFromProperties(
-            (cur as any)?.items ?? {}
+            (cur as any)?.items ?? {},
+            undefined,
+            eventKeysDict
           ),
         },
       },
@@ -302,6 +420,7 @@ export const propertyFormFactory = (
   //     }
   //   : {}
 
+  
   return {
     fields: fields as any,
     injections,

@@ -1,5 +1,8 @@
 import * as iconLibrary from '@mdi/js'
-import { ElementType } from '../../editorController/editorState'
+import {
+  EditorStateType,
+  ElementType,
+} from '../../editorController/editorState'
 import { useEffect, useState } from 'react'
 
 // extracts a component's icon keys (properties of type 'icon')
@@ -35,11 +38,17 @@ export const getIconKeys = (elementType: any, components: any[]) => {
 
 export const useMdiIcons = (
   selectedPageElements: ElementType[],
-  components: any[]
+  components: any[],
+  properties: EditorStateType['properties']
 ) => {
   const [icons, setIcons] = useState<{ [key: string]: string }>({})
 
   useEffect(() => {
+    const getPropByName = (key: string, element_id: string) =>
+      properties?.find(
+        (prop) => prop.prop_name === key && prop.element_id === element_id
+      )?.prop_value
+
     const updateIcons = async () => {
       const flatElements = selectedPageElements
       const iconsNames = flatElements
@@ -50,12 +59,13 @@ export const useMdiIcons = (
             // arrayOfObjectIconKeys,
           } = getIconKeys(el.type, components)
 
-          const directIconNames = directIconKeys.map(
-            (iconKey) => el?.props?.[iconKey]
-          )
+          const directIconNames = directIconKeys.map((iconKey) => {
+            return getPropByName(iconKey, el._id)
+          })
+          // UNCLEAR ???
           const arrayItemIconNames = arrayOfObjectProperties
             ?.map((props) => {
-              return el?.props?.[props.key]?.map((it: any) => {
+              return getPropByName(props.key, el._id)?.map((it: any) => {
                 return props.propertyKeys.map((key) => it?.[key])
               })
             })

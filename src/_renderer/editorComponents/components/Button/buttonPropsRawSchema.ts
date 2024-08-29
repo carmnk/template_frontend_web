@@ -1,7 +1,7 @@
 import { CSS_RULE_NAMES_DICT_FULL } from '../../../defs/CssRulesNamesDictFull'
-import { iconNames } from '../../../defs/icons'
+import { iconNames } from '../../../defs/mdiIcons'
 import { MuiSize } from '../../../defs/muiSizeDict'
-import { PropertyType, ExtendedObjectSchemaType } from '../../rawSchema'
+import { PropertyType, ExtendedObjectSchemaType } from '../../schemaTypes'
 import { muiBaseColors, muiBaseColorsOptions } from '../Chip/chipPropsRawSchema'
 
 // raw schema to use until schema can be generated reliably from typescript parser/checker
@@ -257,11 +257,9 @@ export const ButtonPropsSchema: ExtendedObjectSchemaType = {
     //   required: true,
     // },
     onClick: {
-      type: PropertyType.Function,
+      type: PropertyType.eventHandler,
       required: false,
-      parameters: {
-        event: [{ type: PropertyType.Object, required: true, properties: {} }],
-      },
+      category: 'shortcut',
       //   returnType: { type: PropertyType.Void },
     },
     onKeyDown: {

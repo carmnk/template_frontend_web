@@ -9,6 +9,7 @@ export enum PropertyType {
   children = 'children',
   icon = 'icon',
   json = 'json',
+  eventHandler = 'eventHandler',
 }
 
 export type LiteralType = StringType | NumberType | BooleanType
@@ -21,6 +22,7 @@ export type SchemaType<IsExtendedType extends boolean = false> = FormProps &
     | ChildrenType
     | IconType
     | JsonType
+    | EventHandlerType
   )
 
 type FormProps = {
@@ -126,5 +128,9 @@ export type IconType = {
 
 export type JsonType = {
   type: PropertyType.json
+  required?: boolean
+}
+export type EventHandlerType = {
+  type: PropertyType.eventHandler
   required?: boolean
 }

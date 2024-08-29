@@ -26,6 +26,7 @@ export type EditorControllerType = {
 export type EditorControllerAppStateType = {
   [key: string]: any
   forms: { [key: string]: Record<string, any> }
+  _data: { [key: string]: any }
   // tables: { [key: string]: Record<string, any> }
 }
 export type EditorControllerAppStateReturnType = {
@@ -40,6 +41,8 @@ export type EditorControllerAppStateReturnType = {
       newFormData: Record<string, any>
     ) => void
     getFormData: (elementId: string) => Record<string, any>
+    updateData: (key: string, value: any) => void
+    removeData: (key: string) => void
   }
   // setStateValues: Dispatch<SetStateAction<{ [key: string]: string[] }>>;
 }

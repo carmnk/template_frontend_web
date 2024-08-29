@@ -1,9 +1,6 @@
-import { CSS_RULE_NAMES_DICT } from '../../../defs/CssRuleNamesDict'
 import { CSS_RULE_NAMES_DICT_FULL } from '../../../defs/CssRulesNamesDictFull'
-import { HTML_TAG_NAMES_STRUCTURED_OPTIONS } from '../../../defs/HTMLTagNamesDict'
-import { iconNames } from '../../../defs/icons'
-import { MuiSize } from '../../../defs/muiSizeDict'
-import { PropertyType, ExtendedObjectSchemaType } from '../../rawSchema'
+// import { HTML_TAG_NAMES_STRUCTURED_OPTIONS } from '../../../defs/HTMLTagNamesDict'
+import { PropertyType, ExtendedObjectSchemaType } from '../../schemaTypes'
 
 export const muiTypographyColors = [
   'primary',
@@ -40,7 +37,7 @@ const typographyVariants = [
 ]
 
 const typographyAligns = ['inherit', 'left', 'center', 'right', 'justify']
-const components = HTML_TAG_NAMES_STRUCTURED_OPTIONS
+// const components = HTML_TAG_NAMES_STRUCTURED_OPTIONS
 
 // raw schema to use until schema can be generated reliably from typescript parser/checker
 export const typographyPropsSchema: ExtendedObjectSchemaType = {

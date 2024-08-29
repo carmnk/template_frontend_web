@@ -1,25 +1,23 @@
 import { mdiTable } from '@mdi/js'
-// import { Button } from '../../../buttons/Button/Button'
 import { propertyFormFactory } from '../../propertiesFormFactory'
 import { tablePropsSchema } from './tablePropsRawSchema'
 import { ComponentDefType } from '../../componentDefType'
 import { Table } from '@cmk/fe_utils'
 import { EditorControllerType } from '../../../editorController/editorControllerTypes'
-import { HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS } from '../../../defs/HTMLTagNamesDict'
 import { uniq } from 'lodash'
 
-export const tableEditorComponentDef = {
+export const tableEditorComponentDef: ComponentDefType = {
   type: 'Table' as const,
 
   component: Table,
-  formGen: (editorController: EditorControllerType, selectedElement: any) =>
-    propertyFormFactory(tablePropsSchema, {
-      dynamicOptionsDict: {
-        component: [
-          { value: undefined, label: 'Default (depends on variant)' },
-          ...HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS,
-        ],
-      },
+  formGen: (editorController: EditorControllerType) =>
+    propertyFormFactory(tablePropsSchema, editorController, {
+      // dynamicOptionsDict: {
+      //   component: [
+      //     { value: undefined, label: 'Default (depends on variant)' },
+      //     ...HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS,
+      //   ],
+      // },
       onBeforeChange: (newFormData, prevFormData, changedKey, changedValue) => {
         const adjFormData = Object.keys(newFormData).includes('columns')
           ? {
@@ -44,6 +42,12 @@ export const tableEditorComponentDef = {
               }),
             }
           : newFormData
+        console.log(
+          'INTER-INJECTED OnBEFORE CHANGE:',
+          changedKey,
+          newFormData,
+          adjFormData
+        )
         return adjFormData
       },
 
@@ -89,15 +93,4 @@ export const tableEditorComponentDef = {
   icon: mdiTable,
   category: 'data',
   schema: tablePropsSchema,
-}
-
-export const newButtonEditorComponentDef: ComponentDefType = {
-  type: 'Table' as const,
-
-  component: Table as any,
-  propSchema: tablePropsSchema,
-  dynamicInjections: () => ({ dynamicOptionsDict: {} }),
-
-  icon: mdiTable,
-  category: 'data',
 }

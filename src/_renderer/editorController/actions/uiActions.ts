@@ -62,6 +62,15 @@ export const useEditorControllerUi = (
           },
         }))
       },
+      setProjectAutoSaveReady: () => {
+        setEditorState((current) => ({
+          ...current,
+          ui: {
+            ...current.ui,
+            isAutoSaveReady: true,
+          },
+        }))
+      },
       changePointerMode: (newValue: UI_POINTER_MODE) => {
         setEditorState((current) => ({
           ...current,
@@ -142,6 +151,15 @@ export const useEditorControllerUi = (
             },
           }
         })
+      },
+      selectApi: (newValue: string) => {
+        setEditorState((current) => ({
+          ...current,
+          ui: {
+            ...current.ui,
+            selected: { ...current.ui.selected, externalApi: newValue },
+          },
+        }))
       },
       selectStateComponent: (newValue: string) => {
         setEditorState((current) => ({
@@ -420,6 +438,18 @@ export const useEditorControllerUi = (
             },
           }))
         },
+      },
+      selectTemplate: (newValue: string | null) => {
+        setEditorState((current) => ({
+          ...current,
+          ui: {
+            ...current.ui,
+            selected: {
+              ...current.ui.selected,
+              template: newValue,
+            },
+          },
+        }))
       },
       setTableFilters: (tableName: string, newTableFilters: any[]) => {
         setEditorState((current) => ({

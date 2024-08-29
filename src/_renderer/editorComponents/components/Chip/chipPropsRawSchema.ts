@@ -1,11 +1,11 @@
 import { CSS_RULE_NAMES_DICT_FULL } from '../../../defs/CssRulesNamesDictFull'
-import { iconNames } from '../../../defs/icons'
+import { iconNames } from '../../../defs/mdiIcons'
 import { MuiSize } from '../../../defs/muiSizeDict'
-import { PropertyType, ExtendedObjectSchemaType } from '../../rawSchema'
-const booleanOptions = [
-  { value: false, label: 'false' },
-  { value: true, label: 'true' },
-]
+import { PropertyType, ExtendedObjectSchemaType } from '../../schemaTypes'
+// const booleanOptions = [
+//   { value: false, label: 'false' },
+//   { value: true, label: 'true' },
+// ]
 
 export const muiBaseColors = [
   'primary',

@@ -1,7 +1,12 @@
-import { cloneDeep, remove } from 'lodash'
+import { cloneDeep } from 'lodash'
 import { CSSProperties } from 'react'
 import { useCallback, Dispatch, SetStateAction, useMemo } from 'react'
-import { EditorStateType, ComponentElementTypes } from '../editorState'
+import {
+  EditorStateType,
+  ComponentElementTypes,
+  defaultPageElements,
+  TemplateComponent,
+} from '../editorState'
 import { ElementType, AlternativeViewportElement } from '../editorState'
 import { v4 as uuid } from 'uuid'
 import { EditorControllerType } from '../editorControllerTypes'
@@ -29,6 +34,66 @@ export const useEditorControllerElementActions = (
     currentViewportElements,
     components,
   } = params
+
+  const clearViewport = useCallback(
+    (viewport: string) => {
+      setEditorState((current) => {
+        const rootElement = current.elements.find((el) => el._parentId === null)
+        if (!rootElement) {
+          console.warn(
+            'editorControllerElementActions.ts - clearViewport - no root element found'
+          )
+          return current
+        }
+        console.log('CLEAR VIEWPORT', viewport, defaultPageElements())
+        return {
+          ...current,
+          alternativeViewports: {
+            ...current.alternativeViewports,
+            [viewport]: [
+              {
+                ...rootElement,
+                viewport,
+                _id: uuid(),
+                page: current.ui.selected.page ?? 'index',
+                viewport_ref_element_id: rootElement._id,
+                viewport_db_element_id: rootElement._id,
+              },
+            ],
+          },
+          ui: {
+            ...current.ui,
+            selected: {
+              ...current.ui.selected,
+              viewport: viewport as any,
+            },
+          },
+        }
+      })
+    },
+    [setEditorState]
+  )
+  const resetViewportToXs = useCallback(
+    (viewport: string) => {
+      setEditorState((current) => {
+        return {
+          ...current,
+          alternativeViewports: {
+            ...current.alternativeViewports,
+            [viewport]: [],
+          },
+          ui: {
+            ...current.ui,
+            selected: {
+              ...current.ui.selected,
+              viewport: viewport as any,
+            },
+          },
+        }
+      })
+    },
+    [setEditorState]
+  )
 
   const getElementsAllParentIds = useCallback(
     (elementId: string, viewport?: 'sm' | 'md' | 'lg' | 'xl') => {
@@ -97,6 +162,19 @@ export const useEditorControllerElementActions = (
   )
 
   const actions = useMemo(() => {
+    const elementAttributes = editorState.attributes.filter(
+      (attr) => attr.element_id === editorState.ui.selected.element
+    )
+    const elementAttributesDict = elementAttributes.reduce<Record<string, any>>(
+      (acc, attr) => {
+        return {
+          ...acc,
+          [attr.attr_name]: attr.attr_value,
+        }
+      },
+      {}
+    )
+
     const changeHtmlElementEditedCssRuleValue = (
       newValue: string,
       activeEditRule: string
@@ -155,37 +233,115 @@ export const useEditorControllerElementActions = (
       ruleName: string
     ) => {
       if (!selectedHtmlElement) return
-
-      actions.changeCurrentHtmlElement((current) => {
-        const currentAttributes =
-          'attributes' in current ? current.attributes : {}
-        const newAttributes = {
-          ...currentAttributes,
-          style: {
-            ...(currentAttributes?.style ?? {}),
+      if (
+        editorState.attributes.find(
+          (attr) =>
+            attr.attr_name === 'style' &&
+            attr.element_id === selectedHtmlElement._id
+        )
+      ) {
+        setEditorState((current) => {
+          return {
+            ...current,
+            attributes: current.attributes.map((attr) =>
+              attr.element_id === selectedHtmlElement._id &&
+              attr.attr_name === 'style'
+                ? {
+                    ...attr,
+                    attr_value: {
+                      ...(elementAttributesDict?.style ?? {}),
+                      [ruleName]: ruleValue,
+                    },
+                  }
+                : attr
+            ),
+          }
+        })
+        return
+      } else {
+        const newAttribute = {
+          attr_name: 'style',
+          attr_value: {
+            ...elementAttributesDict,
             [ruleName]: ruleValue,
           },
+          element_id: selectedHtmlElement._id,
+          attr_id: uuid(),
+          project_id: editorState.project.project_id,
+          template_id: null,
         }
-        return {
-          ...current,
-          attributes: newAttributes as any,
-        }
-      })
+        setEditorState((current) => {
+          return {
+            ...current,
+            attributes: [...current.attributes, newAttribute],
+          }
+        })
+      }
+      // actions.changeCurrentHtmlElement((current) => {
+      //   // const currentAttributes =
+      //   //   'attributes' in current ? current.attributes : {}
+      //   const newAttributes = {
+      //     ...elementAttributesDict,
+      //     style: {
+      //       ...(elementAttributesDict?.style ?? {}),
+      //       [ruleName]: ruleValue,
+      //     },
+      //   }
+      //   return {
+      //     ...current,
+      //     attributes: newAttributes as any,
+      //   }
+      // })
     }
     const changeCurrentHtmlElementAttribute = (
       attributeName: string,
       attributeValue: string
     ) => {
-      actions.changeCurrentHtmlElement((current) => {
-        const currentAttributes =
-          'attributes' in current ? current.attributes : {}
-        const newAttributes = {
-          ...currentAttributes,
-          [attributeName]: attributeValue,
-        }
+      // actions.changeCurrentHtmlElement((current) => {
+      //   const currentAttributes =
+      //     'attributes' in current ? current.attributes : {}
+      //   const newAttributes = {
+      //     ...(currentAttributes as any),
+      //     [attributeName]: attributeValue,
+      //   }
+      //   return {
+      //     ...current,
+      //     attributes: newAttributes as any,
+      //   }
+      // })
+      if (!selectedHtmlElement?._id) {
+        return
+      }
+      setEditorState((current) => {
         return {
           ...current,
-          attributes: newAttributes as any,
+          attributes: current.attributes.find(
+            (attr) =>
+              attr.element_id === selectedHtmlElement?._id &&
+              attr.attr_name === attributeName
+          )
+            ? current.attributes.map((attr) =>
+                attr.element_id === selectedHtmlElement?._id &&
+                attr.attr_name === attributeName
+                  ? {
+                      ...attr,
+                      attr_value: attributeValue,
+                      template_id: null,
+                      project_id: editorState.project.project_id,
+                    }
+                  : attr
+              )
+            : [
+                ...current.attributes,
+                {
+                  element_id: selectedHtmlElement?._id,
+                  attr_name: attributeName,
+                  attr_value: attributeValue,
+                  project_id: current.project.project_id,
+                  attr_id: uuid(),
+                  template_id: null,
+                },
+              ],
         }
       })
     }
@@ -213,6 +369,14 @@ export const useEditorControllerElementActions = (
           (el) => el._id === newElementId
         )
         const doesElementExistInViewport = !!viewportspecificElement
+        console.log(
+          'IN VIEWPORT ? ',
+          doesElementExistInViewport,
+          newElementId,
+          newElement._type,
+          'SEL',
+          selectedHtmlElement
+        )
         // if already a viewport specific element -> just replace
         if (doesElementExistInViewport) {
           return {
@@ -287,8 +451,7 @@ export const useEditorControllerElementActions = (
     }
     const changeCurrentElementProp = (
       propName: keyof ElementType,
-      propValue: string,
-      elementId?: string
+      propValue: string
     ) => {
       actions.changeCurrentHtmlElement((current) => {
         return {
@@ -314,6 +477,7 @@ export const useEditorControllerElementActions = (
           )
           return
         }
+        // return
         actions.changeCurrentViewportSpecificElement((current) => {
           return {
             ...current,
@@ -366,12 +530,86 @@ export const useEditorControllerElementActions = (
           currentParentElement._id,
           newChildElements as any
         )
+        setEditorState((current) => {
+          const removedEvents = current.events.filter(
+            (ev) => ev.element_id === id
+          )
+          const removeActionIds = removedEvents
+            .map((ev) => ev.action_ids)
+            .flat()
+
+          const templateId = currentElement.template_id
+          const hasAnotherElementThisTemplateId = currentViewportElements.some(
+            (el) => el.template_id === templateId && el._id !== id
+          )
+          return {
+            ...current,
+            events: current.events.filter((ev) => ev.element_id !== id),
+            actions: current.actions.filter(
+              (ac) => !removeActionIds.includes(ac.action_id)
+            ),
+            attributes: current.attributes.filter((attr) =>
+              templateId && !hasAnotherElementThisTemplateId
+                ? attr.template_id !== templateId && attr.element_id !== id
+                : attr.element_id !== id
+            ),
+            properties: current.properties.filter((prop) =>
+              templateId && !hasAnotherElementThisTemplateId
+                ? prop.template_id !== templateId && prop.element_id !== id
+                : prop.element_id !== id
+            ),
+            templateComponents: current.templateComponents.filter(
+              (comp) =>
+                !templateId ||
+                hasAnotherElementThisTemplateId ||
+                comp.template_id !== templateId
+            ),
+          }
+        })
         return
       }
-      setEditorState((current) => ({
-        ...current,
-        elements: current.elements.filter((el) => el._id !== id),
-      }))
+      setEditorState((current) => {
+        const removedEvents = current.events.filter(
+          (ev) => ev.element_id === id
+        )
+        const removeActionIds = removedEvents.map((ev) => ev.action_ids).flat()
+        const currentElement = current.elements.find((el) => el._id === id)
+        if (!currentElement) {
+          console.warn(
+            'editorControllerElementActions.ts - deleteElement - element not found',
+            id
+          )
+          return current
+        }
+        const templateId = currentElement?.template_id
+        const hasAnotherElementThisTemplateId = editorState.elements.some(
+          (el) => el.template_id === templateId && el._id !== id
+        )
+        return {
+          ...current,
+          elements: current.elements.filter((el) => el._id !== id),
+          events: current.events.filter((ev) => ev.element_id !== id),
+          actions: current.actions.filter(
+            (ac) => !removeActionIds.includes(ac.action_id)
+          ),
+          attributes: current.attributes.filter((attr) =>
+            templateId && !hasAnotherElementThisTemplateId
+              ? attr.template_id !== templateId && attr.element_id !== id
+              : attr.element_id !== id
+          ),
+          properties: current.properties.filter((prop) =>
+            templateId && !hasAnotherElementThisTemplateId
+              ? prop.template_id !== templateId && prop.element_id !== id
+              : prop.element_id !== id
+          ),
+          templateComponents: current.templateComponents.filter(
+            (comp) =>
+              !templateId ||
+              hasAnotherElementThisTemplateId ||
+              comp.template_id !== templateId
+          ),
+        }
+      })
     }
     const addElementChild = (
       parentElementId: string,
@@ -395,15 +633,15 @@ export const useEditorControllerElementActions = (
           _parentId: parentElementId,
           _page: parentElement._page,
           _userID: '',
-          attributes: {},
+          // attributes: {},
         }
-        const currentChildren = currentViewportElements.filter(
-          (el) => el._parentId === parentElementId
-        )
-        const newChildren = [...currentChildren, newElement]
+        // const currentChildren = currentViewportElements.filter(
+        //   (el) => el._parentId === parentElementId
+        // )
+        // const newChildren = [...currentChildren, newElement]
         actions.changeCurrentViewportSpecificElementChildren(
           parentElementId,
-          newChildren as any
+          newElement as any
         )
         return
       }
@@ -421,7 +659,8 @@ export const useEditorControllerElementActions = (
                   _parentId: parentElementId,
                   _page: current.ui.selected.page,
                   _userID: '',
-                  attributes: {},
+                  template_id: null,
+                  // attributes: {},
                 },
               ],
               ui: {
@@ -470,23 +709,46 @@ export const useEditorControllerElementActions = (
     }
     const removeCurrentHtmlElementStyleAttribute = (ruleName: string) => {
       if (!selectedHtmlElement) return
-      actions.changeCurrentHtmlElement((current) => {
-        const currentAttributes =
-          'attributes' in current ? current.attributes : {}
-        const {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          [ruleName as keyof CSSProperties]: rOut,
-          ...attributesExRemoved
-        } = currentAttributes?.style ?? {}
+      setEditorState((current) => {
         return {
           ...current,
-          attributes: {
-            ...(currentAttributes as any),
-            style: attributesExRemoved,
-          },
+          attributes: current.attributes.map((attr) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { [ruleName]: rOut, ...restAttributes } =
+              elementAttributesDict
+            return attr.element_id === selectedHtmlElement._id &&
+              attr.attr_name === 'style'
+              ? {
+                  ...attr,
+                  attr_value: restAttributes,
+                }
+              : attr
+          }),
         }
       })
+
+      // actions.changeCurrentHtmlElement((current) => {
+      //   const currentAttributes =
+      //     'attributes' in current ? current.attributes : {}
+      //   const {
+      //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      //     [ruleName as keyof CSSProperties]: rOut,
+      //     ...attributesExRemoved
+      //   } = (currentAttributes as any)?.style ?? {}
+      //   return {
+      //     ...current,
+      //     attributes: {
+      //       ...(currentAttributes as any),
+      //       style: attributesExRemoved,
+      //     },
+      //   }
+      // })
     }
+    const getPropByNameAndElementId = (key: string, element_id: string) =>
+      editorState.properties?.find(
+        (prop) => prop.prop_name === key && prop.element_id === element_id
+      )?.prop_value
+
     const changeSelectedComponentProp = (key: string, value: any) => {
       if (!selectedHtmlElement) return
       // TODO: Generic approad
@@ -495,7 +757,7 @@ export const useEditorControllerElementActions = (
           .map((tab: any) => tab.value)
           ?.sort((a: string, b: string) => (a > b ? 1 : a < b ? -1 : 0))
         const currentTabNames =
-          (selectedHtmlElement as any)?.props?.items?.map?.(
+          getPropByNameAndElementId('items', selectedHtmlElement._id)?.map?.(
             (tab: any) => tab.value
           ) || []
         // const currentTabNames = appController.values?.[selectedHtmlElement.id]?.sort(
@@ -508,20 +770,56 @@ export const useEditorControllerElementActions = (
           console.log('CHANGE NavContainer, too and current tab if needed!')
         }
       }
-      actions.changeCurrentHtmlElement((current) => {
+      setEditorState((current) => {
         return {
           ...current,
-          props: {
-            ...((current as any).props ?? {}),
-            [key]: value,
-          },
+          properties: current.properties.find(
+            (prop) =>
+              prop.element_id === selectedHtmlElement._id &&
+              prop.prop_name === key
+          )
+            ? current.properties.map((prop) =>
+                prop.element_id === selectedHtmlElement._id &&
+                prop.prop_name === key
+                  ? {
+                      ...prop,
+                      // project_id: current.project.project_id,
+                      prop_value: value,
+                      // template_id: null, // templates are changed separately
+                    }
+                  : prop
+              )
+            : [
+                ...current.properties,
+                {
+                  element_id: selectedHtmlElement._id,
+                  prop_name: key,
+                  prop_value: value,
+                  project_id: current.project.project_id,
+                  prop_id: uuid(),
+                  template_id: null,
+                },
+              ],
         }
       })
+      // actions.changeCurrentHtmlElement((current) => {
+      //   return {
+      //     ...current,
+      //     props: {
+      //       ...((current as any).props ?? {}),
+      //       [key]: value,
+      //     },
+      //   }
+      // })
     }
     const swapHtmlElements = (elementId: string, targetElementId: string) => {
       const currentViewport = editorState.ui.selected.viewport
       // specific viewport!
       if (currentViewport !== 'xs') {
+        console.log(
+          "SWAP ELEMENTS - CURRENT VIEWPORT ISN'T XS",
+          currentViewport
+        )
         const parentElement1Id = editorState.elements.find(
           (el) => el._id === elementId
         )?._parentId
@@ -555,29 +853,26 @@ export const useEditorControllerElementActions = (
         const viewportSpecificParent1 = editorState.alternativeViewports[
           currentViewport
         ].find((el) => el._id === parentElement1Id)
-        const parent1Children =
-          viewportSpecificParent1 &&
-          viewportSpecificParent1._viewportAreChildrenChanged
-            ? editorState.alternativeViewports[currentViewport].filter(
-                (el) => el._parentId === parentElement1Id
-              )
-            : editorState.elements.filter(
-                (el) => el._parentId === parentElement1Id
-              )
+
+        const parent1Children = viewportSpecificParent1
+          ? editorState.alternativeViewports[currentViewport].filter(
+              (el) => el._parentId === parentElement1Id
+            )
+          : editorState.elements.filter(
+              (el) => el._parentId === parentElement1Id
+            )
 
         const viewportSpecificParent2 = editorState.alternativeViewports[
           currentViewport
         ].find((el) => el._id === parentElement2Id)
 
-        const parent2Children =
-          viewportSpecificParent2 &&
-          viewportSpecificParent2._viewportAreChildrenChanged
-            ? editorState.alternativeViewports[currentViewport].filter(
-                (el) => el._parentId === parentElement2Id
-              )
-            : editorState.elements.filter(
-                (el) => el._parentId === parentElement2Id
-              )
+        const parent2Children = viewportSpecificParent2
+          ? editorState.alternativeViewports[currentViewport].filter(
+              (el) => el._parentId === parentElement2Id
+            )
+          : editorState.elements.filter(
+              (el) => el._parentId === parentElement2Id
+            )
         if (parentElement1Id === parentElement2Id) {
           const newParentChildren = parent1Children.map((el) =>
             el._id === elementId
@@ -702,36 +997,102 @@ export const useEditorControllerElementActions = (
           )
           return
         }
-        actions.changeCurrentViewportSpecificElement((current) => {
+        setEditorState((current) => {
           return {
             ...current,
-            props: {
-              ...((current as any).props ?? {}),
-              [key]: value,
-            },
+            properties: current.properties.find(
+              (prop) => prop.element_id === elementId && prop.prop_name === key
+            )
+              ? current.properties.map((prop) =>
+                  prop.element_id === elementId && prop.prop_name === key
+                    ? {
+                        ...prop,
+                        prop_value: value,
+                      }
+                    : prop
+                )
+              : [
+                  ...current.properties,
+                  {
+                    element_id: elementId,
+                    prop_name: key,
+                    prop_value: value,
+                    project_id: current.project.project_id,
+                    prop_id: uuid(),
+                    template_id: null,
+                  },
+                ],
           }
         })
         return
       }
-
-      setEditorState((current) => ({
-        ...current,
-        elements: current.elements.map((el) =>
-          el._id === elementId
-            ? {
-                ...el,
-                props: {
-                  ...((el as any).props ?? {}),
-                  [key]: value,
+      setEditorState((current) => {
+        return {
+          ...current,
+          properties: current.properties.find(
+            (prop) => prop.element_id === elementId && prop.prop_name === key
+          )
+            ? current.properties.map((prop) =>
+                prop.element_id === elementId && prop.prop_name === key
+                  ? {
+                      ...prop,
+                      // project_id: current.project.project_id,
+                      prop_value: value,
+                    }
+                  : prop
+              )
+            : [
+                ...current.properties,
+                {
+                  element_id: elementId,
+                  prop_name: key,
+                  prop_value: value,
+                  project_id: current.project.project_id,
+                  prop_id: uuid(),
+                  template_id: null,
                 },
-              }
-            : el
-        ),
-      }))
+              ],
+        }
+      })
     }
+    const changeTemplateProp = (
+      templateId: string,
+      key: string,
+      value: any
+    ) => {
+      setEditorState((current) => {
+        return {
+          ...current,
+          properties: current.properties.find(
+            (prop) => prop.template_id === templateId && prop.prop_name === key
+          )
+            ? current.properties.map((prop) =>
+                prop.template_id === templateId && prop.prop_name === key
+                  ? {
+                      ...prop,
+                      // project_id: current.project.project_id,
+                      prop_value: value,
+                    }
+                  : prop
+              )
+            : [
+                ...current.properties,
+                {
+                  element_id: null,
+                  prop_name: key,
+                  prop_value: value,
+                  project_id: current.project.project_id,
+                  prop_id: uuid(),
+                  template_id: templateId,
+                },
+              ],
+        }
+      })
+    }
+
     const changeCurrentViewportSpecificElementChildren = (
       elementId: string,
-      newChildren: AlternativeViewportElement[]
+      newChild: AlternativeViewportElement
     ) => {
       const currentViewport = editorState.ui.selected.viewport
       if (currentViewport === 'xs') {
@@ -740,41 +1101,30 @@ export const useEditorControllerElementActions = (
       }
       setEditorState((current) => {
         const viewportElements = current.alternativeViewports[currentViewport]
-        const viewportspecificElement = viewportElements.find(
+        const viewportspecificParentElement = viewportElements.find(
           (el) => el._id === elementId
         )
-        const doesElementExistInViewport = !!viewportspecificElement
-        // element's children have already been changed
-        if (
-          doesElementExistInViewport &&
-          viewportspecificElement._viewportAreChildrenChanged
-        ) {
-          console.debug(
-            "editorControllerElementActions.ts - changeCurrentViewportSpecificElementChildren - element's children have already been changed"
+        const doesElementExistInViewport = !!viewportspecificParentElement
+
+        if (doesElementExistInViewport) {
+          const viewportElementsExNewChild = viewportElements.filter(
+            (el) => el._id !== newChild._id
           )
-          return current
-          // element exists in the viewport specific tree and children have not yet been changed
-        } else if (
-          doesElementExistInViewport &&
-          !viewportspecificElement._viewportAreChildrenChanged
-        ) {
-          const viewportElementsExNewChildren = viewportElements.filter(
-            (el) => !newChildren.find((child) => child._id === el._id)
-          )
-          const parentElementIdx = viewportElementsExNewChildren.findIndex(
+          const parentElementIdx = viewportElementsExNewChild.findIndex(
             (el) => el._id === elementId
           )
+          const parentChildElementIdxs = viewportElementsExNewChild
+            .filter((el) => el._parentId === elementId)
+            .map((child) =>
+              viewportElementsExNewChild.findIndex((el) => el._id === child._id)
+            )
+          const maxIdx = Math.max(parentElementIdx, ...parentChildElementIdxs)
+
           const newViewportElements = [
-            ...viewportElementsExNewChildren.slice(0, parentElementIdx + 1),
-            ...newChildren,
-            ...viewportElementsExNewChildren.slice(parentElementIdx + 1),
-          ].map((el) => {
-            const newParentElement = {
-              ...el,
-              _viewportAreChildrenChanged: true,
-            }
-            return el._id === elementId ? newParentElement : el
-          })
+            ...viewportElementsExNewChild.slice(0, maxIdx + 1),
+            newChild,
+            ...viewportElementsExNewChild.slice(maxIdx + 1),
+          ]
 
           console.debug(
             "editorControllerElementActions.ts - changeCurrentViewportSpecificElementChildren - element's children have noet been changed yet",
@@ -789,28 +1139,25 @@ export const useEditorControllerElementActions = (
           }
           // element does not yet exist in the viewport specific tree
         } else {
-          console.debug('HELLO')
-          const currentElementIn = current.elements.find(
+          console.debug('need to insert element into viewport')
+          const currentElement = current.elements.find(
             (el) => el._id === elementId
           )
-          if (!currentElementIn) {
+          if (!currentElement) {
             console.error('ELEMENT NOT FOUND in elements tree')
             return current
           }
-          const currentElement = {
-            ...currentElementIn,
-            _viewportAreChildrenChanged: true,
-          }
+
           const elementsBefore = getAllElementsBeforeElement(
             elementId,
             currentViewport
           )
-          const currentViewportElementsExNewChildren = viewportElements.filter(
-            (el) => !newChildren.find((child) => child._id === el._id)
+          const currentViewportElementsExNewChild = viewportElements.filter(
+            (el) => newChild._id !== el._id
           )
           let pasteIndex2: number | null = null
           for (let e = 0; e < elementsBefore.length; e++) {
-            const idx = currentViewportElementsExNewChildren.findIndex(
+            const idx = currentViewportElementsExNewChild.findIndex(
               (el) => el._id === elementsBefore[e]
             )
             if (idx === -1) {
@@ -820,14 +1167,18 @@ export const useEditorControllerElementActions = (
               pasteIndex2 = idx
             }
           }
+          const currentChildren = current.elements.filter(
+            (el) => el._parentId && el._parentId === elementId
+          )
           console.debug(
             'editorControllerElementActions.ts - changeCurrentViewportSpecificElementChildren - element does not exist yet in viewport',
-            currentViewportElementsExNewChildren,
+            currentViewportElementsExNewChild,
             'new elements',
             [
-              ...(currentViewportElementsExNewChildren ?? []),
+              ...(currentViewportElementsExNewChild ?? []),
               currentElement,
-              ...newChildren,
+              ...currentChildren,
+              newChild,
             ]
           )
           if (pasteIndex2 === null) {
@@ -838,9 +1189,10 @@ export const useEditorControllerElementActions = (
               alternativeViewports: {
                 ...current.alternativeViewports,
                 [currentViewport]: [
-                  ...(currentViewportElementsExNewChildren ?? []),
+                  ...(currentViewportElementsExNewChild ?? []),
                   currentElement,
-                  ...newChildren,
+                  ...currentChildren,
+                  newChild,
                 ],
               },
             }
@@ -850,15 +1202,14 @@ export const useEditorControllerElementActions = (
               alternativeViewports: {
                 ...current.alternativeViewports,
                 [currentViewport]: [
-                  ...currentViewportElementsExNewChildren.slice(
+                  ...currentViewportElementsExNewChild.slice(
                     0,
                     pasteIndex2 + 1
                   ),
                   currentElement,
-                  ...newChildren,
-                  ...currentViewportElementsExNewChildren.slice(
-                    pasteIndex2 + 1
-                  ),
+                  ...currentChildren,
+                  newChild,
+                  ...currentViewportElementsExNewChild.slice(pasteIndex2 + 1),
                 ],
               },
             }
@@ -870,15 +1221,17 @@ export const useEditorControllerElementActions = (
       parentElementId: string,
       type: ComponentElementTypes
     ) => {
-      const defaultComponentProps = components.find(
-        (comp) => comp.type === type
-      )
+      const defaultComponent = components.find((comp) => comp.type === type)
       const _id = uuid()
       const currenViewport = editorState.ui.selected.viewport
       const currenPage = editorState.ui.selected.page
+      const hasComponentTypeAlreadyTemplate =
+        editorState.templateComponents.some((templ) => templ?.type === type)
+      const templateId = addTemplateComponentIfNotExists(type)
+
       const newElement = {
-        props: {},
-        ...(defaultComponentProps as any), // -> TODO -> untangle instance and template
+        // props: {},
+        ...(defaultComponent as any), // -> TODO -> untangle instance and template
         _id,
         _page: currenPage,
         _userID: '',
@@ -887,7 +1240,19 @@ export const useEditorControllerElementActions = (
         // _imageSrcId: newElement.imageSrcId,
         // attributes: newElement.attributes,
         _parentId: parentElementId,
+        template_id: templateId,
       }
+      const initialProps = (defaultComponent as any)?.props ?? {}
+
+      // actions.
+      const initialProperties = Object.keys(initialProps).map((key) => ({
+        element_id: null as any,
+        template_id: templateId,
+        prop_name: key,
+        prop_value: initialProps[key],
+        project_id: editorState.project.project_id,
+        prop_id: uuid(),
+      }))
 
       if (currenViewport !== 'xs') {
         const parentElement = currentViewportElements.find(
@@ -900,24 +1265,39 @@ export const useEditorControllerElementActions = (
           )
           return
         }
-        const currentChildren = currentViewportElements.filter(
-          (el) => el._parentId === parentElementId
-        )
-        const newChildren = [...currentChildren, newElement]
+        // const currentChildren = currentViewportElements.filter(
+        //   (el) => el._parentId === parentElementId
+        // )
+        // const newChildren = [...currentChildren, newElement]
         actions.changeCurrentViewportSpecificElementChildren(
           parentElementId,
-          newChildren
+          newElement
         )
 
+        setEditorState((current) => {
+          // const hasComponentTypeAlreadyTemplate =
+          //   current.templateComponents.some((templ) => templ.type === type)
+          if (hasComponentTypeAlreadyTemplate) return current
+          return {
+            ...current,
+            properties: [...current.properties, ...initialProperties],
+          }
+        })
         return
       }
 
-      setEditorState((current) =>
-        !current.ui.selected.page
+      setEditorState((current) => {
+        // const hasComponentTypeAlreadyTemplate = current.templateComponents.some(
+        //   (templ) => templ?.type === type
+        // )
+        return !current.ui.selected.page
           ? current
           : {
               ...current,
               elements: [...current.elements, newElement],
+              properties: hasComponentTypeAlreadyTemplate
+                ? current.properties
+                : [...current.properties, ...initialProperties],
               ui: {
                 ...current.ui,
                 navigationMenu: {
@@ -935,16 +1315,156 @@ export const useEditorControllerElementActions = (
                 },
               },
             }
-      )
-      if ('state' in (defaultComponentProps ?? {})) {
+      })
+      if ('state' in (defaultComponent ?? {})) {
         appController.actions.addProperty(
           _id,
-          (defaultComponentProps as any)?.state ?? ''
+          (defaultComponent as any)?.state ?? ''
         )
       }
     }
 
+    const addTemplateComponentIfNotExists = (type: string): string => {
+      let templateId = uuid()
+      setEditorState((current) => {
+        const hasComponentTypeAlreadyTemplate = current.templateComponents.some(
+          (templ) => templ.type === type
+        )
+        if (hasComponentTypeAlreadyTemplate) {
+          const defaultTemplateId = current.templateComponents.find(
+            (templ) => templ.type === type && templ.is_default
+          )?.template_id
+          if (defaultTemplateId) {
+            templateId = defaultTemplateId
+          }
+        }
+        const newTemplate: TemplateComponent = {
+          template_id: templateId,
+          template_name: hasComponentTypeAlreadyTemplate
+            ? 'New Template'
+            : 'default',
+          content: null,
+          type,
+          is_default: !hasComponentTypeAlreadyTemplate,
+          project_id: editorState.project.project_id,
+        }
+        return {
+          ...current,
+          templateComponents: hasComponentTypeAlreadyTemplate
+            ? current.templateComponents
+            : [...current.templateComponents, newTemplate],
+        }
+      })
+      return templateId
+    }
+    const addNewTemplateComponent = (type: string) => {
+      const hasComponentTypeAlreadyTemplate =
+        editorState.templateComponents.some((templ) => templ.type === type)
+      const templateId = uuid()
+      const newTemplate: TemplateComponent = {
+        template_id: templateId,
+        template_name: hasComponentTypeAlreadyTemplate
+          ? 'New Template'
+          : 'default',
+        content: null,
+        type,
+        is_default: !hasComponentTypeAlreadyTemplate,
+        project_id: editorState.project.project_id,
+      }
+      const defaultComponent = components.find((comp) => comp.type === type)
+      const initialProps = (defaultComponent as any)?.props ?? {}
+      const initialProperties = Object.keys(initialProps).map((key) => ({
+        element_id: null as any,
+        template_id: templateId,
+        prop_name: key,
+        prop_value: initialProps[key],
+        project_id: editorState.project.project_id,
+        prop_id: uuid(),
+      }))
+      setEditorState((current) => {
+        return {
+          ...current,
+          templateComponents: [...current.templateComponents, newTemplate],
+          properties: [...current.properties, ...initialProperties],
+        }
+      })
+    }
+
+    const changeTemplateComponentName = (
+      templateId: string,
+      newName: string
+    ) => {
+      setEditorState((current) => {
+        return {
+          ...current,
+          templateComponents: current.templateComponents.map((el) =>
+            el.template_id === templateId
+              ? {
+                  ...el,
+                  template_name: newName,
+                }
+              : el
+          ),
+        }
+      })
+    }
+    const changeTemplateComponentIsDefault = (templateId: string) => {
+      setEditorState((current) => {
+        const templateType = current.templateComponents.find(
+          (el) => el.template_id === templateId
+        )?.type
+        if (!templateType) {
+          return current
+        }
+        return {
+          ...current,
+          templateComponents: current.templateComponents.map((el) =>
+            el.template_id === templateId
+              ? {
+                  ...el,
+                  is_default: true,
+                }
+              : el.type === templateType
+              ? { ...el, is_default: false }
+              : el
+          ),
+        }
+      })
+    }
+    const removeTemplateComponent = (templateId: string) => {
+      setEditorState((current) => {
+        return {
+          ...current,
+          templateComponents: current.templateComponents.filter(
+            (el) => el.template_id !== templateId
+          ),
+          properties: current.properties.filter(
+            (prop) => prop.template_id !== templateId
+          ),
+        }
+      })
+    }
+    const changeElementTemplate = (elementId: string, templateId: string) => {
+      setEditorState((current) => {
+        return {
+          ...current,
+          elements: current.elements.map((el) =>
+            el._id === elementId
+              ? {
+                  ...el,
+                  template_id: templateId,
+                }
+              : el
+          ),
+          properties: current.properties.filter(
+            (prop) => prop.element_id !== elementId
+          ),
+        }
+      })
+    }
+
     return {
+      removeTemplateComponent,
       changeHtmlElementEditedCssRuleValue,
       changeCurrentHtmlElement,
       changeCurrentHtmlElementStyleAttribute,
@@ -962,6 +1482,12 @@ export const useEditorControllerElementActions = (
       changeComponentProp,
       changeCurrentViewportSpecificElementChildren,
       addComponentChild,
+      clearViewport,
+      resetViewportToXs,
+      addNewTemplateComponent,
+      changeTemplateProp,
+      changeTemplateComponentName,
+      changeElementTemplate,
     }
   }, [
     setEditorState,
@@ -975,6 +1501,14 @@ export const useEditorControllerElementActions = (
     getElementsAllParentIds,
     appController.actions,
     editorState.ui.selected.page,
+    components,
+    clearViewport,
+    resetViewportToXs,
+    editorState.properties,
+    editorState.project.project_id,
+    editorState.attributes,
+    editorState.ui.selected.element,
+    editorState.templateComponents,
   ])
 
   return actions

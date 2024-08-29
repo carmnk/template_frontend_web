@@ -1,5 +1,5 @@
 import { CSS_RULE_NAMES_DICT_FULL } from '../../../defs/CssRulesNamesDictFull'
-import { PropertyType, ExtendedObjectSchemaType } from '../../rawSchema'
+import { PropertyType, ExtendedObjectSchemaType } from '../../schemaTypes'
 import { paperPropsSchema } from '../Paper/paperPropsRawSchema'
 
 // raw schema to use until schema can be generated reliably from typescript parser/checker

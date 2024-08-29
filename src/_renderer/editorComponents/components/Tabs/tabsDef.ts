@@ -1,10 +1,11 @@
 import { mdiTab } from '@mdi/js'
 import { propertyFormFactory } from '../../propertiesFormFactory'
 import { TabsPropsSchema } from './tabsPropsRawSchema'
-import { HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS } from '../../../defs/HTMLTagNamesDict'
 import { Tabs } from '@cmk/fe_utils'
+import { EditorControllerType } from '../../../editorController/editorControllerTypes'
+import { ComponentDefType } from '../../componentDefType'
 
-export const TabsComponentDef = {
+export const TabsComponentDef: ComponentDefType = {
   type: 'Tabs' as const,
   props: {
     // children: "test",
@@ -22,15 +23,19 @@ export const TabsComponentDef = {
     },
   },
   state: 'test',
-  formGen: () =>
-    propertyFormFactory(TabsPropsSchema, {
-      dynamicOptionsDict: {
-        component: [
-          { value: undefined, label: 'Default (depends on variant)' },
-          ...HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS,
-        ],
-      },
-    }),
+  formGen: (editorController: EditorControllerType) =>
+    propertyFormFactory(
+      TabsPropsSchema,
+      editorController
+      //   {
+      //   dynamicOptionsDict: {
+      //     component: [
+      //       { value: undefined, label: 'Default (depends on variant)' },
+      //       ...HTML_TAG_NAMES_STRUCTURED_NONVOID_OPTIONS,
+      //     ],
+      //   },
+      // }
+    ),
   //   formGen: ButtonGroupComponentPropsFormFactory,
   icon: mdiTab,
   category: 'navigation',

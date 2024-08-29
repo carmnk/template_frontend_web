@@ -3,10 +3,12 @@ import { ElementBox } from './ElementBox'
 import { AppBar, Box, Paper, Theme } from '@mui/material'
 import { EditorControllerType } from '../editorController/editorControllerTypes'
 import React from 'react'
-import { PropertyType } from '../editorComponents/rawSchema'
+import { PropertyType } from '../editorComponents/schemaTypes'
 import { TableProps } from '@cmk/fe_utils'
 import { RootElementOverlay } from './RootElementOverlay'
 import { isComponentType } from './utils'
+import { queryAction } from './queryAction'
+import { replaceTemplateInString } from './templates'
 
 export const isStringLowerCase = (str: string): boolean => {
   return str === str.toLowerCase()
@@ -43,22 +45,32 @@ export const renderHtmlElements = (
       : elements?.filter((el) => el._parentId === parentId)
   )?.filter((el) => el._page === editorState.ui.selected.page)
 
-  const rawElements = elementsAdj.map((element, eIdx) => {
+  const rawElements = elementsAdj.map((element) => {
     const typeFirstLetter = element._type.slice(0, 1)
     const isHtmlElement = isStringLowerCase(typeFirstLetter)
+    const elementProps = editorState.properties?.filter(
+      (prop) => prop.element_id === element._id
+    )
+    const templateProps = editorState.properties?.filter(
+      (prop) => prop.template_id === element.template_id
+    )
+    const allElementProps = [...(elementProps ?? []), ...(templateProps ?? [])]
 
-    const props = (element as any)?.schema?.properties ?? {}
+    const getPropByName = (key: string) =>
+      allElementProps?.find((prop) => prop.prop_name === key)?.prop_value
+
+    const schemaProps = (element as any)?.schema?.properties ?? {}
     const elementIconKeys = isHtmlElement
       ? []
-      : Object.keys(props)?.filter(
-          (key) => props[key]?.type === PropertyType.icon
+      : Object.keys(schemaProps)?.filter(
+          (key) => schemaProps[key]?.type === PropertyType.icon
         )
     const elementArrayKeys = isHtmlElement
       ? []
-      : Object.keys(props)?.filter((key) => {
-          const itemsProps = (props?.[key] as any)?.items?.[0]?.properties
+      : Object.keys(schemaProps)?.filter((key) => {
+          const itemsProps = (schemaProps?.[key] as any)?.items?.[0]?.properties
           return (
-            props[key]?.type === PropertyType.Array &&
+            schemaProps[key]?.type === PropertyType.Array &&
             Object.keys(itemsProps)?.filter?.(
               (key) => itemsProps[key]?.type === PropertyType.icon
             )
@@ -66,7 +78,7 @@ export const renderHtmlElements = (
         })
     const elementArrayIconInjectionDict = elementArrayKeys
       .map((key) => {
-        const itemsProps = (props?.[key] as any)?.items?.[0]?.properties
+        const itemsProps = (schemaProps?.[key] as any)?.items?.[0]?.properties
         return Object.keys(itemsProps)
           ?.filter((key) => itemsProps[key]?.type === PropertyType.icon)
           ?.map((itemKey) => ({ key, itemKey }))
@@ -75,7 +87,7 @@ export const renderHtmlElements = (
       ?.reduce((acc, it) => {
         return {
           ...acc,
-          [it.key]: (element as any)?.props?.[it.key]?.map?.((item: any) => ({
+          [it.key]: getPropByName(it.key)?.map?.((item: any) => ({
             ...item,
             [it.itemKey]: icons?.[item[it.itemKey]],
           })),
@@ -83,10 +95,11 @@ export const renderHtmlElements = (
       }, {})
 
     // e.g. {...., icon: mdiPencil, ... }
+
     const injectedIconsDict = elementIconKeys?.reduce(
       (acc, key) => ({
         ...acc,
-        [key]: icons?.[(element as any)?.props?.[key]],
+        [key]: icons?.[getPropByName(key)],
       }),
       {}
     )
@@ -99,10 +112,38 @@ export const renderHtmlElements = (
       'component' in baseComponent &&
       (baseComponent.component as React.ComponentType<any>)
 
+    const elementPropsObject = allElementProps.reduce((acc, cur) => {
+      const key = cur.prop_name
+      const keyValue = getPropByName(key)
+      // currently only data
+      const regex = /{(_data|form)\.[^}]*}/g
+      const matches = keyValue?.match?.(regex)
+      const keyValueAdj = matches
+        ? replaceTemplateInString(
+            keyValue,
+            editorController.appController.state
+          )
+        : keyValue
+      return {
+        ...acc,
+        [key]: keyValueAdj,
+      }
+    }, {})
+    // const elementPropsAdj = elementProps
+
+    const regex = /{(_data|form)\.[^}]*}/g
+    const matches = element._content?.match?.(regex)
+    const content = matches
+      ? replaceTemplateInString(
+          element._content ?? '',
+          editorController.appController.state
+        )
+      : element._content
     const elementAdj = {
       ...element,
+      content,
       props: {
-        ...(((element as any)?.props as any) ?? {}),
+        ...(elementPropsObject ?? {}),
         // ...iconInjection,
         // ...endIconInjection,
         ...injectedIconsDict,
@@ -117,17 +158,18 @@ export const renderHtmlElements = (
     }
 
     const elementChildren =
-      currentViewportElements?.filter((el) => el._parentId === element._id) ??
-      []
+      currentViewportElements?.filter(
+        (el) => el._parentId === element._id && element._id
+      ) ?? []
     const tabChildren =
       element?._type === ('NavContainer' as any)
         ? (() => {
-            const sourceControlElementId = (element as any)?.props
-              ?.navigationElementId
+            const sourceControlElementId = getPropByName('navigationElementId')
+            // ?.navigationElementId
 
             if (!sourceControlElementId) return []
             const activeTab = appController?.state?.[sourceControlElementId]
-            const activeId = (element as any)?.props?.items?.find(
+            const activeId = getPropByName('items')?.find(
               (item: any) => item.value === activeTab
             )?.childId
             const activeChild = elementChildren?.find?.(
@@ -176,11 +218,12 @@ export const renderHtmlElements = (
     const [clientFilterKey, clientFilterDirection] =
       clientFilterSorting?.split?.(',') ?? []
 
-    const clientFilteredTableData = elementAdj?.props?.data?.filter((d: any) =>
-      clientFiltersExSorting?.length
-        ? clientFilters.some((f: any) => f.value === d[f.filterKey])
-        : true
-    )
+    const clientFilteredTableData =
+      getPropByName('data')?.filter?.((d: any) =>
+        clientFiltersExSorting?.length
+          ? clientFilters.some((f: any) => f.value === d[f.filterKey])
+          : true
+      ) ?? []
     const clientSortedFilteredTableData = clientFilterKey
       ? clientFilteredTableData?.sort?.((a: any, b: any) => {
           const sortKey = clientFilterKey
@@ -205,10 +248,72 @@ export const renderHtmlElements = (
       onIsHoveringChange: editorController.actions.ui.selectHoveredElement,
       isProduction,
     }
+    const componentEvents = (elementAdj as any)
+      ?.formGen?.(editorController, appController)
+      ?.fields?.filter((field: any) => field._prop_type === 'eventHandler')
+    const componentEventNames = componentEvents?.map((ev: any) => ev.name)
+    const eventHandlerProps = componentEventNames?.reduce(
+      (acc: any, currentEventName: string) => {
+        const eventProps = getPropByName(currentEventName)
+        if (!eventProps) return acc
+        return {
+          ...acc,
+          [currentEventName]: () => {
+            const clickActionIds: string[] = eventProps
+            const clickActions = editorState.actions.filter((act) =>
+              clickActionIds.includes(act.action_id)
+            )
+            for (let c = 0; c < clickActions.length; c++) {
+              const clickAction = clickActions[c]
+              const endpointId = clickAction.endpoint_id
+              const endpoint = editorState.externalApis
+                .map((api) =>
+                  api.endpoints.map((ep) => ({
+                    ...ep,
+                    api_id: api.external_api_id,
+                  }))
+                )
+                .flat()
+                .find((ep) => ep.endpoint_id === endpointId)
+              const api = editorState.externalApis.find(
+                (api) => api.external_api_id === endpoint?.api_id
+              )
+              const url = (api?.baseUrl ?? '') + (endpoint?.url ?? '')
+              const action = editorState.actions.find(
+                (act) => act.endpoint_id === endpoint?.endpoint_id
+              )
+              queryAction(
+                appController,
+                action?.action_id ?? '', // should never happen -> should always have action
+                endpoint?.method,
+                url,
+                !!endpoint?.useCookies,
+                {},
+                endpoint?.headers,
+                endpoint?.params,
+                endpoint?.responseType
+              )
+            }
+          },
+        }
+      },
+      {}
+    )
 
+    // if (element._type === 'Button') {
+    //   const propFields = (elementAdj as any)
+    //     ?.formGen?.(editorController, appController)
+    //     ?.fields?.filter((field: any) => field._prop_type === 'eventHandler')
+    // }
+
+    const elementAdj2 = {
+      ...elementAdj,
+      _content: content,
+    }
     return isHtmlElement ? (
       <ElementBox
-        element={element}
+        element={elementAdj2}
+        onSelectElement={onSelectElement}
         editorState={editorState}
         key={element._id}
         isProduction={isProduction || isPointerProduction}
@@ -223,20 +328,61 @@ export const renderHtmlElements = (
       CurrentComponent ? (
         <CurrentComponent
           key={element._id}
-          {...((elementAdj as any)?.props ?? {})}
+          {...(elementPropsObject ?? {})}
+          {...injectedIconsDict}
+          {...elementArrayIconInjectionDict}
           rootInjection={<RootElementOverlay {...rootElementOverlayProps} />}
           sx={
             !isProduction
               ? {
-                  ...((elementAdj as any)?.props?.sx ?? {}),
+                  ...((elementPropsObject as any)?.sx ?? {}),
                   position: 'relative',
                 }
-              : (elementAdj as any)?.props?.sx
+              : (elementPropsObject as any)?.sx
           }
+          // onClick={
+          //   'onClick' in elementAdj.props
+          //     ? () => {
+          //         const clickActionIds: string[] = elementAdj.props.onClick
+          //         const clickActions = editorState.actions.filter((act) =>
+          //           clickActionIds.includes(act.action_id)
+          //         )
+          //         for (let c = 0; c < clickActions.length; c++) {
+          //           const clickAction = clickActions[c]
+          //           const endpointId = clickAction.endpoint_id
+          //           const endpoint = editorState.externalApis
+          //             .map((api) =>
+          //               api.endpoints.map((ep) => ({
+          //                 ...ep,
+          //                 api_id: api.external_api_id,
+          //               }))
+          //             )
+          //             .flat()
+          //             .find((ep) => ep.endpoint_id === endpointId)
+          //           const api = editorState.externalApis.find(
+          //             (api) => api.external_api_id === endpoint?.api_id
+          //           )
+          //           const url = (api?.baseUrl ?? '') + (endpoint?.url ?? '')
+          //           queryAction(
+          //             endpoint?.method,
+          //             url,
+          //             !!endpoint?.useCookies,
+          //             {},
+          //             endpoint?.headers,
+          //             endpoint?.params,
+          //             endpoint?.responseType
+          //           )
+          //         }
+          //       }
+          //     : undefined
+          // }
+          {...eventHandlerProps}
         />
       ) : ['Table'].includes(element?._type) && CurrentComponent ? (
         <CurrentComponent
-          {...((elementAdj as any)?.props ?? {})}
+          {...(elementPropsObject ?? {})}
+          {...injectedIconsDict}
+          {...elementArrayIconInjectionDict}
           data={clientSortedFilteredTableData}
           onSetFilters={(newFilters: any) => {
             actions.ui.setTableFilters(elementAdj._id, newFilters)
@@ -245,91 +391,108 @@ export const renderHtmlElements = (
           sx={
             !isProduction
               ? {
-                  ...((elementAdj as any)?.props?.sx ?? {}),
+                  ...((elementPropsObject as any)?.sx ?? {}),
                   position: 'relative',
                 }
-              : (elementAdj as any)?.props?.sx
+              : (elementPropsObject as any)?.sx
           }
           rootInjection={<RootElementOverlay {...rootElementOverlayProps} />}
+          {...eventHandlerProps}
         />
       ) : ['Form'].includes(element?._type) && CurrentComponent ? (
         <CurrentComponent
-          {...((elementAdj as any)?.props ?? {})}
+          {...(elementPropsObject ?? {})}
+          {...injectedIconsDict}
+          {...elementArrayIconInjectionDict}
           formData={appController.actions.getFormData(elementAdj._id)}
-          onChangeFormData={(
-            newFormData: any,
-            propertyKey: string,
-            propertyValue: any,
-            prevFormData: any
-          ) => {
-            appController.actions.changeFormData(elementAdj._id, newFormData)
-          }}
+          onChangeFormData={
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            (
+              newFormData: any,
+              propertyKey: string,
+              propertyValue: any,
+              prevFormData: any
+              /* eslint-enable @typescript-eslint/no-explicit-any */
+            ) => {
+              appController.actions.changeFormData(elementAdj._id, newFormData)
+            }
+          }
           sx={
             !isProduction
               ? {
-                  ...((elementAdj as any)?.props?.sx ?? {}),
+                  ...((elementPropsObject as any)?.sx ?? {}),
                   position: 'relative',
                 }
-              : (elementAdj as any)?.props?.sx
+              : (elementPropsObject as any)?.sx
           }
           rootInjection={<RootElementOverlay {...rootElementOverlayProps} />}
+          {...eventHandlerProps}
         />
       ) : //  NAVIGATION ELEMENTS (slightly different interface)
       ['Tabs', 'BottomNavigation', 'ListNavigation', 'ButtonGroup'].includes(
           element?._type
         ) && CurrentComponent ? (
         <CurrentComponent
-          {...((elementAdj as any)?.props ?? {})} // icon injections needed ? -> more generic approach
+          {...((elementPropsObject as any) ?? {})} // icon injections needed ? -> more generic approach
+          {...injectedIconsDict}
+          {...elementArrayIconInjectionDict}
           onChange={onTabChange}
           value={navValueState}
           sx={
             !isProduction
               ? {
-                  ...((elementAdj as any)?.props?.sx ?? {}),
+                  ...((elementPropsObject as any)?.sx ?? {}),
                   position: 'relative',
                 }
-              : (elementAdj as any)?.props?.sx
+              : (elementPropsObject as any)?.sx
           }
           rootInjection={<RootElementOverlay {...rootElementOverlayProps} />}
+          {...eventHandlerProps}
         >
           {renderedElementChildren}
         </CurrentComponent>
       ) : element?._type === 'AppBar' ? (
         <AppBar
-          {...((element?.props as any) ?? {})}
+          {...((elementPropsObject as any) ?? {})}
+          {...injectedIconsDict}
+          {...elementArrayIconInjectionDict}
           sx={
-            (element?.props?.position === 'fixed' ||
-              !element?.props?.position) &&
+            ((elementPropsObject as any)?.position === 'fixed' ||
+              !(elementPropsObject as any)?.position) &&
             !isProduction
               ? {
-                  ...((elementAdj as any)?.props?.sx ?? {}),
+                  ...((elementPropsObject as any)?.sx ?? {}),
                   top: 42,
                   left: editorState.ui.previewMode ? 0 : 364,
                   width: editorState.ui.previewMode
                     ? '100%'
                     : 'calc(100% - 364px - 350px)',
                 }
-              : { ...((elementAdj as any)?.props?.sx ?? {}) }
+              : { ...((elementPropsObject as any)?.sx ?? {}) }
           }
           onChange={onTabChange}
           value={navValueState}
+          {...eventHandlerProps}
         >
           {renderedElementChildren}
           <RootElementOverlay {...rootElementOverlayProps} />
         </AppBar>
       ) : element?._type === 'Paper' ? (
         <Paper
-          {...((element?.props as any) ?? {})}
+          {...((elementPropsObject as any) ?? {})}
+          {...injectedIconsDict}
+          {...elementArrayIconInjectionDict}
           sx={
             !isProduction
               ? {
-                  ...((elementAdj as any)?.props?.sx ?? {}),
+                  ...((elementPropsObject as any)?.sx ?? {}),
                   position: 'relative',
                 }
-              : (elementAdj as any)?.props?.sx
+              : (elementPropsObject as any)?.sx
           }
           onChange={onTabChange}
           value={navValueState}
+          {...eventHandlerProps}
         >
           {renderedElementChildren}
           <RootElementOverlay {...rootElementOverlayProps} />
@@ -337,8 +500,19 @@ export const renderHtmlElements = (
       ) : // Navigation Container -> specific render case (but could be component, too)
       element?._type === 'NavContainer' ? (
         (() => {
-          const { children, ...childLessProps } = element?.props ?? {}
-          return <Box {...(childLessProps ?? {})}>{TabChildren}</Box>
+          const { children, ...childLessProps } =
+            (elementPropsObject as any) ?? {}
+
+          return (
+            <Box
+              {...(childLessProps ?? {})}
+              {...eventHandlerProps}
+              {...injectedIconsDict}
+              {...elementArrayIconInjectionDict}
+            >
+              {TabChildren}
+            </Box>
+          )
         })()
       ) : null
     ) : null

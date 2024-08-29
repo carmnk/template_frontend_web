@@ -81,7 +81,6 @@ export const useEditorControllerCssSelectorActions = (
         //   current?.cssWorkspaces?.common?.[
         //     current.ui.selected.cssSelector ?? ""
         //   ];
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         // const { [ruleName as keyof CSSProperties]: _, ...restClassRules } =
         //   currentClass;
 
@@ -90,6 +89,7 @@ export const useEditorControllerCssSelectorActions = (
           cssSelectors: current.cssSelectors.map((cssSelector) => {
             if (cssSelector._id === current.ui.selected.cssSelector) {
               const ruleNameTyped = ruleName as keyof CSSProperties
+              // eslint-disable-next-line
               const { [ruleNameTyped]: _rOut, ...restRules } = cssSelector
               return restRules
             }
@@ -143,7 +143,7 @@ export const useEditorControllerCssSelectorActions = (
               _userId: newRuleName,
               project_id: editorState.project.project_id,
               // [newRuleName]: newRuleValue,
-            } 
+            }
           }
           return cssSelector
         }),
@@ -199,6 +199,7 @@ export const useEditorControllerCssSelectorActions = (
       }))
     }
 
+    // eslint-disable-next-line
     const addCssSelector = (newVal: string) => {
       setEditorState((current) => {
         const newClassNameRaw = 'newClass'
@@ -232,7 +233,6 @@ export const useEditorControllerCssSelectorActions = (
     const deleteCssSelector = (name: string) => {
       setEditorState((current) => {
         // const cssCommonWorkspace = current.cssWorkspaces?.common;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         // const { [name]: _nOut, ...cssCommonWorkspaceExDeleteItem } =
         //   cssCommonWorkspace;
         return {

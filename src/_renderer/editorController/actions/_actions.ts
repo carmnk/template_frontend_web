@@ -12,6 +12,8 @@ import { useEditorControllerServerConfigActions } from './serverConfigActions'
 import { useEditorControllerThemesActions } from './themesActions'
 import { useEditorControllerUi } from './uiActions'
 import { ElementType } from '../editorState'
+import { useEditorControllerExternalApiActions } from './externalApiActions'
+import { useUserActions } from './userActions'
 
 export const useEditorActions = (params: {
   editorState: EditorStateType
@@ -73,6 +75,18 @@ export const useEditorActions = (params: {
     activeElementStyles: selectedHtmlElementStyleAttributes2,
     currentViewportElements,
   })
+  const externalApiActions = useEditorControllerExternalApiActions({
+    editorState,
+    setEditorState,
+  })
+
+  const userActions = useUserActions({
+    editorState,
+    setEditorState,
+    currentViewportElements,
+    // components: COMPONENT_MODELS,
+  })
+
   return {
     project: projectActions,
     htmlElement: htmlElementActions,
@@ -81,5 +95,7 @@ export const useEditorActions = (params: {
     assets: assetActions,
     ui: uiActions,
     serverConfig: serverConfigState,
+    externalApi: externalApiActions,
+    events: userActions,
   }
 }

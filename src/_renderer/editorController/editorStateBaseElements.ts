@@ -1,7 +1,7 @@
-import { ElementType } from '../editorController/editorState'
+import { ElementType } from './editorState'
 import { v4 as uuid } from 'uuid'
 
-export const baseHtmlDocument: ElementType[] = [
+export const baseHtmlDocument: ElementType<'div'>[] = [
   // {
   //   id: "html_root",
   //   type: "html",
@@ -29,12 +29,13 @@ export const baseHtmlDocument: ElementType[] = [
     _page: 'index',
     _parentId: null,
     _userID: '',
+    template_id: null,
 
-    attributes: {
-      style: {
-        height: '100%',
-      },
-    },
+    // attributes: {
+    //   style: {
+    //     height: '100%',
+    //   },
+    // },
   },
   //   ],
   // },

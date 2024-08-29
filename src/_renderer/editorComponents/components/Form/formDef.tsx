@@ -3,14 +3,16 @@ import { propertyFormFactory } from '../../propertiesFormFactory'
 import { formPropsSchema } from './formPropsRawSchema'
 import { GenericForm } from '@cmk/fe_utils'
 import { EditorControllerType } from '../../../editorController/editorControllerTypes'
+import { ComponentDefType } from '../../componentDefType'
 
-export const formEditorComponentDef = {
+export const formEditorComponentDef: ComponentDefType = {
   type: 'Form' as const,
 
   component: GenericForm,
-  formGen: (editorController: EditorControllerType, selectedElement: any) =>
-    propertyFormFactory(formPropsSchema, {
+  formGen: (editorController: EditorControllerType) =>
+    propertyFormFactory(formPropsSchema, editorController, {
       dynamicKeysDict: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         fields: (f: any, g: any) => {
           return [
             {

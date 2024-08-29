@@ -1,4 +1,4 @@
-import { Box, Theme, ThemeProvider, useTheme } from '@mui/material'
+import { Box, Theme, ThemeProvider } from '@mui/material'
 import React, { useEffect, useMemo } from 'react'
 import { renderHtmlElements } from './renderElements.tsx'
 import { Route, Routes, useLocation } from 'react-router-dom'
@@ -27,11 +27,16 @@ export const HtmlRenderer = (props: HtmlRendererProps) => {
     actions,
     COMPONENT_MODELS,
   } = editorController
+
   const selectElement = actions.ui.selectElement
 
   const location = useLocation()
 
-  const icons = useMdiIcons(selectedPageHtmlElements2, COMPONENT_MODELS)
+  const icons = useMdiIcons(
+    selectedPageHtmlElements2,
+    COMPONENT_MODELS,
+    editorState.properties
+  )
 
   const handleSelectElement = React.useCallback(
     (element: ElementType, boundingRect: any) => {
@@ -159,7 +164,7 @@ export const HtmlRenderer = (props: HtmlRendererProps) => {
   }, [
     windowSize,
     isProduction,
-    editorState.theme.breakpoints.values,
+    editorState?.theme?.breakpoints?.values,
     setEditorState,
   ])
 
@@ -190,7 +195,7 @@ export const HtmlRenderer = (props: HtmlRendererProps) => {
           bgcolor={'background.default'}
           color={'text.primary'}
           overflow={'auto'}
-          position={editorState.ui.previewMode ? 'absolute' : undefined}
+          position={editorState.ui.previewMode ? 'absolute' : 'relative'}
           width={editorState.ui.previewMode ? '100%' : undefined}
           height={editorState.ui.previewMode ? '100%' : undefined}
           sx={containerStyles}
