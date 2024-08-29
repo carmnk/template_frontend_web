@@ -18,7 +18,6 @@ function App() {
       defaultEditorState(),
       baseComponents
     )
-    
 
     // adjust images -> images are currently supposed to be in the json - imageFiles.[n].image
     //CLOUD SOLutioN BACK !!!
@@ -61,6 +60,15 @@ function App() {
         ...transformedState.assets,
         images,
       },
+      attributes: transformedState.attributes.map((attr) => {
+        return {
+          ...attr,
+          attr_value:
+            attr.attr_name === 'style'
+              ? JSON.parse(attr.attr_value)
+              : attr.attr_value,
+        }
+      }),
     }
   }, [])
 

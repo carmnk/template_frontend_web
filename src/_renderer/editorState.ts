@@ -1,5 +1,5 @@
 import { CSSProperties } from 'react'
-import { baseHtmlDocument } from './editorStateBaseElements'
+import { baseHtmlDocument } from './editorStateBaseElements.ts'
 import { ExtendedTheme, muiDarkSiteTheme, muiLightSiteTheme } from './muiTheme'
 import { cloneDeep } from 'lodash'
 import { SYSTEM_FONTS_CSS_STRINGS } from './defs/CssFontFamilies'
