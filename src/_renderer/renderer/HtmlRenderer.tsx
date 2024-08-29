@@ -80,7 +80,7 @@ export const HtmlRenderer = (props: HtmlRendererProps) => {
 
   // change the route, renderer uses editorState.ui.selected.page to render the page
   useEffect(() => {
-    if (isProduction) {
+    if (!isProduction) {
       return
     }
     console.log('location changed', location.pathname)
