@@ -9,6 +9,7 @@ import { EntityListFieldPayloadType } from '../EntityModel/entity_list_fields'
 import { EntityJoiningPayloadType } from '../EntityModel/entity_joinings'
 
 //SETTING BASE URL
+//SETTING BASE URL
 export const BASE_URL = import.meta.env.VITE_BE_SERVER_URL
 
 export const API = {
@@ -33,7 +34,10 @@ export const API = {
 
   test: makeApiQuery<any, any>('auth/test', 'POST'),
   saveProject: (project_id: number | string) =>
-    makeApiQuery<any, any>(`/api/project/${project_id}`, 'POST'),
+    makeApiQuery<any, any>(`api/project/${project_id}`, 'POST'),
+  saveProjectImages: (project_id: number | string) =>
+    makeApiQuery<any, any>(`api/project/${project_id}/images`, 'POST'),
+
   saveGithubRepo: makeApiQuery<{ project_id: number }, any>(
     '_api/editor/save-repo',
     'POST'
