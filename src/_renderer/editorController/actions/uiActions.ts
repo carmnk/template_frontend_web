@@ -195,7 +195,6 @@ export const useEditorControllerUi = (
         }))
       },
       selectElement: (value: string, boundingRect: any) => {
-        // console.log('SELECT ELEMENT', value)
         setEditorState((current) => ({
           ...current,
           ui: {

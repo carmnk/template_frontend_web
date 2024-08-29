@@ -14,7 +14,6 @@ export function createAndDownloadFileWithText(filename: string, text: string) {
 export const toBase64 = (file: File) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader()
-    console.log('READEr - file ', file)
     reader.readAsDataURL(file)
     reader.onload = () => resolve(reader.result)
     reader.onerror = reject

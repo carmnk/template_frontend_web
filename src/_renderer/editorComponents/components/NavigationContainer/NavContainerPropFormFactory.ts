@@ -75,7 +75,6 @@ export const NavContainerComponentPropsFormFactory = (
     label: el._type + ((el as any).attributes?.id ?? ''),
   }))
 
-  console.log('OPTIONS NAV ELEMENT , ', optionsDict, navigationElementIdOptions)
   return generateFormProps({
     optionsDict,
     initialFormData: {
@@ -155,27 +154,6 @@ export const ItemPropsFormFactory = (
           //     label: tab.label,
           //   })
           // )
-          console.log(
-            'NavContainerPropFormFactory.ts - value Options',
-            navItemOptions
-          )
-          console.log(
-            'NavContainerPropFormFactory.ts - value Options - filtered opts',
-            navigationElement,
-            editorController?.currentViewportElements,
-            'rootFormData',
-            rootFormData,
-            'formData',
-            formData,
-            'EditorController',
-            editorController,
-            'NEW APPROACH',
-            selectedElementId,
-            isSelectedElementNavContainer,
-            selectedElement,
-            navigationElement,
-            navItemOptions
-          )
           return navItemOptions ?? []
         },
         childId: (formData: any, rootFormData: any) => {

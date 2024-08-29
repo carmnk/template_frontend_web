@@ -44,12 +44,6 @@ export const tableEditorComponentDef = {
               }),
             }
           : newFormData
-        console.log(
-          'INTER-INJECTED OnBEFORE CHANGE:',
-          changedKey,
-          newFormData,
-          adjFormData
-        )
         return adjFormData
       },
 

@@ -31,9 +31,7 @@ export type ServerControllerActionsType = {
   login: () => void
   logout: () => void
   handleRequestWebsiteZipBundle: () => void
-  saveProjectToCloud: (
-    payload: EditorStateType
-  ) => Promise<EditorStateType | null>
+  saveProjectToCloud: () => Promise<EditorStateType | null>
   getLoggedInStatus: () => { expires: string | null; email: string | null }
   changeLoginEmail: (email: string) => void
   changeLoginPassword: (password: string) => void
@@ -439,12 +437,12 @@ export const useServerController = (
           (theme) => theme.palette.mode === defaultTheme
         ) as any,
       }
-      console.log(
-        'LOAD_PROJECT- data in,',
-        serverResponse,
-        newEditorState,
-        newEditorStateWithImages
-      )
+      // console.log(
+      //   'LOAD_PROJECT- data in,',
+      //   serverResponse,
+      //   newEditorState,
+      //   newEditorStateWithImages
+      // )
       if (serverResponse?.project) setEditorState(newEditorStateWithImages)
 
       return newEditorStateWithImages
@@ -517,9 +515,10 @@ export const useServerController = (
     }
   }, [])
 
-  const saveProjectToCloud = useCallback(
-    async (payload: EditorStateType): Promise<EditorStateType | null> => {
-      const compareEditorStateBeforeSave = makeComparableEditorState(payload)
+  const saveProjectToCloud =
+    useCallback(async (): Promise<EditorStateType | null> => {
+      const payload: EditorStateType = editorState
+      // const compareEditorStateBeforeSave = makeComparableEditorState(payload)
       const payloadDbDataRaw = transformEditorStateToPayload(payload)
       if (!payloadDbDataRaw) {
         return null
@@ -546,7 +545,8 @@ export const useServerController = (
       }
 
       try {
-        const res = await API.saveProject.query(
+        const project_id = payloadDbDataRaw.project.project_id
+        const res = await API.saveProject(project_id).query(
           payloadDbData,
           undefined,
           undefined,
@@ -563,46 +563,44 @@ export const useServerController = (
         //   editorState
         // )
         // setEditorState(newEditorcState)
-        console.log(
-          'SAVE_PROJECT- After Save, data in:',
-          resDataIn,
-          'new state',
-          newEditorState
-        )
+        // console.log(
+        //   'SAVE_PROJECT- After Save, data in:',
+        //   resDataIn,
+        //   'new state',
+        //   newEditorState
+        // )
 
-        const adjNewEditorState = makeComparableEditorState(newEditorState)
+        // const adjNewEditorState = makeComparableEditorState(newEditorState)
 
-        const deviatingKeys = getDeviatingKeys(
-          compareEditorStateBeforeSave,
-          adjNewEditorState
-        )
-        const deviatingKeys2 = getDeviatingKeys(
-          compareEditorStateBeforeSave.elements[1],
-          adjNewEditorState.elements[1]
-        )
-        console.log(
-          'COMPARE before vs after save',
-          compareEditorStateBeforeSave,
-          adjNewEditorState,
-          isEqual(compareEditorStateBeforeSave, adjNewEditorState),
-          deviatingKeys,
-          deviatingKeys.map((key) =>
-            getDeviatingKeys(
-              compareEditorStateBeforeSave?.[key],
-              adjNewEditorState?.[key]
-            )
-          ),
-          deviatingKeys2
-        )
+        // const deviatingKeys = getDeviatingKeys(
+        //   compareEditorStateBeforeSave,
+        //   adjNewEditorState
+        // )
+        // const deviatingKeys2 = getDeviatingKeys(
+        //   compareEditorStateBeforeSave.elements[1],
+        //   adjNewEditorState.elements[1]
+        // )
+        // console.log(
+        //   'COMPARE before vs after save',
+        //   compareEditorStateBeforeSave,
+        //   adjNewEditorState,
+        //   isEqual(compareEditorStateBeforeSave, adjNewEditorState),
+        //   deviatingKeys,
+        //   deviatingKeys.map((key) =>
+        //     getDeviatingKeys(
+        //       compareEditorStateBeforeSave?.[key],
+        //       adjNewEditorState?.[key]
+        //     )
+        //   ),
+        //   deviatingKeys2
+        // )
         setEditorState(newEditorState)
         return newEditorState
       } catch (err) {
         console.error(err)
         return null
       }
-    },
-    [loadProjectFromServerResponse, setEditorState]
-  )
+    }, [loadProjectFromServerResponse, setEditorState, editorState])
 
   const saveGithubRepo = useCallback(async () => {
     try {

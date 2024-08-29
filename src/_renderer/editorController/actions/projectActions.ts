@@ -27,7 +27,6 @@ export const useEditorControllerProjectActions = (
 
   const actions = useMemo(() => {
     const saveProjectToJson = async () => {
-      console.log('NEW IMAGES', editorState.assets.images)
       const newImages = []
       for (let i = 0; i < editorState.assets.images.length; i++) {
         const image = editorState.assets.images[i]
@@ -37,11 +36,6 @@ export const useEditorControllerProjectActions = (
           image: imageBase64,
         })
       }
-      // editorState.assets.images.map((image) => ({
-      //   ...image,
-      //   image: toBase64(image.image as unknown as File),
-      // }))
-      console.log('NEW IMAGES', editorState.assets.images, newImages)
       const editStateAdj = {
         ...editorState,
         assets: {
@@ -56,45 +50,21 @@ export const useEditorControllerProjectActions = (
       if (!editorDbState) {
         return
       }
-      console.log('EDITOR STATE', editStateAdj)
-      console.log('DB STATE', editorDbState)
-      const editorStateBack = transformEditorStateFromPayload(
-        editorDbState,
-        defaultEditorState(),
-        components,
-        false
-      )
-      console.log('EDITOR STATE BACK', editorStateBack)
 
-      const editorStateCompare = makeComparableEditorState(editStateAdj)
-      const editorStateBackCompare = makeComparableEditorState(editorStateBack)
+      // const editorStateBack = transformEditorStateFromPayload(
+      //   editorDbState,
+      //   defaultEditorState(),
+      //   components,
+      //   false
+      // )
 
-      const isEqualEditorState = isEqual(editorStateCompare, {
-        ...editorStateBackCompare,
-        abc: 13,
-      })
-      if (!isEqualEditorState) {
-        console.log(
-          'isEqual editorState: ',
-          isEqualEditorState,
-          editorStateCompare,
-          editorStateBackCompare,
-          // getDeviatingKeys(
-          //   editorStateCompare.cssSelectors[0],
-          //   editorStateBackCompare.cssSelectors[0]
-          // ),
-          // getDeviatingKeys(
-          //   editorStateCompare.theme[0],
-          //   editorStateBackCompare.theme[0]
-          // ),
-          // getDeviatingKeys(editorStateCompare.ui, editorStateBackCompare.ui)
-          getRecursiveDeviatingKeys(editorStateCompare, {
-            ...editorStateBackCompare,
-            abc: 13,
-          })
-        )
-      }
-      console.log('JSON TEST', editorDbState)
+      // const editorStateCompare = makeComparableEditorState(editStateAdj)
+      // const editorStateBackCompare = makeComparableEditorState(editorStateBack)
+
+      // const isEqualEditorState = isEqual(editorStateCompare, {
+      //   ...editorStateBackCompare,
+      //   abc: 13,
+      // })
 
       // return
       const filenameExExtension =

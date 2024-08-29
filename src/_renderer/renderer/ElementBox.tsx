@@ -15,9 +15,9 @@ import { useNavigate } from 'react-router-dom'
 export type ElementBoxProps = {
   element: ElementType
   editorState: EditorStateType
-  onSelectElement: (element: ElementType, isHovering: boolean) => void
   isProduction?: boolean
   isPointerProduction?: boolean
+  appController: any
 }
 
 const sx = {
@@ -25,14 +25,8 @@ const sx = {
 }
 
 export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
-  const {
-    element,
-    children,
-    onSelectElement,
-    editorState,
-    isProduction,
-    isPointerProduction,
-  } = props
+  const { element, children, editorState, isProduction, isPointerProduction } =
+    props
   const theme = useTheme()
   const navigate = useNavigate()
 
@@ -49,23 +43,6 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
   )
 
   const styles = useMemo(() => {
-    // const additionalHoverStyles =
-    //   !(isProduction || isPointerProduction) &&
-    //   (isHovering || editorState?.ui.selected.element === element._id)
-    //     ? {
-    //         border:
-    //           '1px ' +
-    //           (editorState?.ui.selected.element === element._id
-    //             ? 'solid '
-    //             : 'dashed ') +
-    //           theme.palette.primary.main,
-    //         borderRadius: '1px',
-    //         '& >div:first-of-type': {
-    //           display: 'block',
-    //         },
-    //         //   width: "calc(100% - 2px)",
-    //       }
-    //     : {}
     const linkHoverStyles =
       element._type === 'a' && (element as any)?.attributes?.href
         ? { cursor: 'pointer' }
@@ -170,7 +147,6 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
     if (element._type === 'a') {
       return {
         onClick: (e: MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-          // console.log('element onclick', element)
           e.preventDefault()
           const attributes =
             element.attributes as HTMLProps<HTMLLinkElement> & {
@@ -178,7 +154,6 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
             }
 
           const isExternalLink = !attributes?.href?.startsWith('/')
-          // console.log('attributes', attributes, isExternalLink)
           if (isExternalLink) {
             window.open(attributes?.href, '_blank')
           } else {
@@ -192,25 +167,13 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
     return {}
   }, [element, navigate])
 
-  const uiEditorHandlers = useMemo(() => {
-    return isProduction || isPointerProduction
-      ? {}
-      : {
-          onClick: (e: MouseEvent<HTMLDivElement, MouseEvent>) => {
-            e.stopPropagation()
-            onSelectElement(element, isHovering)
-          },
-        }
-  }, [onSelectElement, element, isHovering, isProduction, isPointerProduction])
-
   return ['br', 'hr', 'img'].includes(element?._type) ? (
-    <Box {...boxProps} {...linkProps} ref={ref} />
+    <Box {...boxProps} {...linkProps} />
   ) : (
     <Box
       {...linkProps}
       {...boxProps}
       // {...uiEditorHandlers}
-      ref={ref}
     >
       {/* label */}
       {!(isProduction || isPointerProduction) &&

@@ -141,11 +141,6 @@ export const reloadSerializedThemes = (
     //   factor: 2,
     // })
     // const theme = { ...muiTheme, name: themeIn.name, id: themeIn.id }
-    // console.log('newThemeStatic ', {
-    //     ...newThemeStatic,
-    //     name: themeIn.name,
-    //     id: themeIn.id,
-    //   }, themes)
     const muiTheme = {
       ...createMuiTheme({
         ...newThemeStatic,

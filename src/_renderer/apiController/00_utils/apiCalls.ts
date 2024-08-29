@@ -228,7 +228,6 @@ export const redirectToLoginPageIfTokenIsExpired = (
   error: AxiosError<any, { data: { msg: string } }>
 ) => {
   // if (process?.env?.JEST_WORKER_ID !== undefined) return
-  // console.log('REDIRECETED', error)
   if (
     error.response &&
     error.response.status == 401

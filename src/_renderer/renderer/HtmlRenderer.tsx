@@ -27,7 +27,6 @@ export const HtmlRenderer = (props: HtmlRendererProps) => {
     actions,
     COMPONENT_MODELS,
   } = editorController
-  console.log('COMPONENT_MODELS', COMPONENT_MODELS)
   const selectElement = actions.ui.selectElement
 
   const location = useLocation()
@@ -49,12 +48,6 @@ export const HtmlRenderer = (props: HtmlRendererProps) => {
     (page: string) => {
       const pageElements = currentViewportElements.filter(
         (el) => el._page === page
-      )
-      console.log(
-        'pageElements',
-        pageElements,
-        currentViewportElements,
-        editorState.elements
       )
 
       return renderHtmlElements(

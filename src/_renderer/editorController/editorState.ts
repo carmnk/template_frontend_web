@@ -306,7 +306,7 @@ export const defaultEditorState = (): EditorStateType => {
       dragging: null,
       selected: {
         viewport: 'xs',
-        page: null, // 'index',
+        page: 'index',
         element: null,
         hoveredElement: null,
         hoveredElementSide: null,

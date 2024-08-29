@@ -32,7 +32,8 @@ export const API = {
   ),
 
   test: makeApiQuery<any, any>('auth/test', 'POST'),
-  saveProject: makeApiQuery<any, any>('_api/editor/save', 'POST'),
+  saveProject: (project_id: number | string) =>
+    makeApiQuery<any, any>(`/api/project/${project_id}`, 'POST'),
   saveGithubRepo: makeApiQuery<{ project_id: number }, any>(
     '_api/editor/save-repo',
     'POST'

@@ -522,10 +522,6 @@ export const useEditorControllerElementActions = (
       const currentViewport = editorState.ui.selected.viewport
       // specific viewport!
       if (currentViewport !== 'xs') {
-        console.log(
-          "SWAP ELEMENTS - CURRENT VIEWPORT ISN'T XS",
-          currentViewport
-        )
         const parentElement1Id = editorState.elements.find(
           (el) => el._id === elementId
         )?._parentId

@@ -95,7 +95,6 @@ export const RootElementOverlay = (props: RootElementOverlayProps) => {
   const handleStartDragging = useCallback(
     (e: MouseEvent) => {
       e.stopPropagation()
-      console.log('SHOULD START DRAGGING')
       if (editorState?.ui?.selected?.element === elementId) {
         const rect = overlayRef.current?.getBoundingClientRect()
         if (!rect) return

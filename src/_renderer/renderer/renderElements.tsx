@@ -37,8 +37,6 @@ export const renderHtmlElements = (
     COMPONENT_MODELS,
   } = editorController
 
-  console.log("elements", elements)
-
   const elementsAdj = (
     !parentId
       ? elements?.filter((el) => !el._parentId)
@@ -168,15 +166,6 @@ export const renderHtmlElements = (
         isPointerProduction
       )
 
-    // console.log(
-    //   element._type,
-    //   element,
-    //   ['Tabs', 'BottomNavigation', 'ListNavigation', 'ButtonGroup'].includes(
-    //     element?._type
-    //   ),
-    //   CurrentComponent
-    // )
-
     const clientFilters = tableUis?.[element._id]?.filters ?? []
     const clientFiltersExSorting = clientFilters?.filter(
       (f: any) => f.filterKey !== 'sorting'
@@ -220,10 +209,10 @@ export const renderHtmlElements = (
     return isHtmlElement ? (
       <ElementBox
         element={element}
-        onSelectElement={onSelectElement}
         editorState={editorState}
         key={element._id}
         isProduction={isProduction || isPointerProduction}
+        appController={appController}
       >
         <RootElementOverlay {...rootElementOverlayProps} />
         {renderedElementChildren}

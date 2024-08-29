@@ -13,7 +13,6 @@ export const transformEditorStateFromPayload = (
   componentsIn: any[],
   disableThemeReload = false
 ): EditorStateType => {
-  //   console.log('DATA !', data)
   const {
     selected_css_selector,
     selected_element,

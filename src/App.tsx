@@ -9,7 +9,7 @@ import { baseComponents } from './_renderer/editorComponents/baseComponents'
 import { defaultEditorState } from './_renderer/editorController/editorState'
 import packageJson from '../package.json'
 
-console.log('appData', appData)
+// console.log('appData', appData)
 
 function App() {
   const appDataAdj = useMemo(() => {
@@ -18,7 +18,7 @@ function App() {
       defaultEditorState(),
       baseComponents
     )
-    console.log('TRANSFORM', appData, transformedState)
+    // console.log('TRANSFORM', appData, transformedState)
 
     // adjust images -> images are currently supposed to be in the json - imageFiles.[n].image
     //CLOUD SOLutioN BACK !!!
@@ -35,7 +35,9 @@ function App() {
       ...transformedState,
 
       elements: transformedState.elements.map((el) => {
-        const image = images.find((img) => img._id === (el as any)?.attributes?.src)
+        const image = images.find(
+          (img) => img._id === (el as any)?.attributes?.src
+        )
         const imageId = image?._id
         const imageFilename = image?.fileName
         const imageFilenameExtension = imageFilename?.split('.').pop()
@@ -70,7 +72,6 @@ function App() {
   })
   const theme = editorController.editorState.theme
 
-  console.log('appData Adjusted ', appDataAdj)
   return (
     <>
       <BrowserRouter basename={packageJson?.homepage}>
