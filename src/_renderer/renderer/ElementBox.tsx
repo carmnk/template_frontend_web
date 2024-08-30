@@ -267,8 +267,19 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editorState?.events])
 
+  const imageFile = useMemo(
+    () =>
+      element?._type === 'img' && elementAttributsDict?.src
+        ? (editorState.assets.images.find(
+            (img) => img._id === elementAttributsDict?.src && img.image
+          )?.image as unknown as File)
+        : undefined,
+    [element, elementAttributsDict, editorState.assets.images]
+  )
+  const imageSrc = imageFile ? URL.createObjectURL(imageFile) : undefined
+
   return ['br', 'hr', 'img'].includes(element?._type) ? (
-    <Box {...boxProps} {...linkProps} ref={elementRef} />
+    <Box {...boxProps} {...linkProps} src={imageSrc} ref={elementRef} />
   ) : (
     <Box
       {...linkProps}

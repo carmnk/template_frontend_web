@@ -108,18 +108,7 @@ export const useApiController = (
     const changedDbStateKeys = dbStateKeys.filter((keyRaw: any) => {
       const key = keyRaw as keyof EditorStateDbDataType
       const dbStateSub =
-        key === 'attributes'
-          ? dbState?.[key]?.map?.((attr) => {
-              /* eslint-disable @typescript-eslint/no-unused-vars */
-              const { attr_id, ...rest } = attr as any
-              return rest
-            }) ?? []
-          : // : key === 'props'
-          // ? dbState[key].map((attr) => {
-          //     const { prop_id, ...rest } = attr as any
-          //     return rest
-          //   })
-          key === 'project'
+        key === 'project'
           ? (() => {
               const {
                 created_datetime,
@@ -135,20 +124,7 @@ export const useApiController = (
           : dbState?.[key]
 
       const lastDbStateSub =
-        key === 'attributes'
-          ? lastDbState?.current?.[key].map((attr) => {
-              /* eslint-disable @typescript-eslint/no-unused-vars */
-              const { attr_id, ...rest } = attr as any
-              return rest
-            })
-          : // : key === 'props'
-          // ? lastDbState?.current?.[key].map(
-          //     (prop: EditorStateDbDataType['properties'][number]) => {
-          //       const { prop_id, ...rest } = prop
-          //       return rest
-          //     }
-          //   )
-          key === 'project'
+        key === 'project'
           ? (() => {
               const {
                 created_datetime,

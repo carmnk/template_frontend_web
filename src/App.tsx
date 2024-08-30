@@ -8,6 +8,7 @@ import { transformEditorStateFromPayload } from './_renderer/apiController/trans
 import { baseComponents } from './_renderer/editorComponents/baseComponents'
 import { defaultEditorState } from './_renderer/editorController/editorState'
 import packageJson from '../package.json'
+import { Toaster } from 'react-hot-toast'
 
 // console.log('appData', appData)
 
@@ -32,42 +33,24 @@ function App() {
     // }))
     return {
       ...transformedState,
-
-      elements: transformedState.elements.map((el) => {
-        const image = images.find(
-          (img) => img._id === (el as any)?.attributes?.src
-        )
-        const imageId = image?._id
-        const imageFilename = image?.fileName
-        const imageFilenameExtension = imageFilename?.split('.').pop()
-        const newImageFilename = `${imageId}.${imageFilenameExtension}`
-        const path = packageJson.homepage + '/assets/images/' + newImageFilename
-
-        return el._type === 'img' && el.attributes?.src
-          ? {
-              ...el,
-              attributes: {
-                ...el.attributes,
-                src: path,
-
-                // adjImages.find((adjImg) => adjImg._id === el?.attributes?.src)
-                //   ?.image || null,
-              },
-            }
-          : el
-      }),
       assets: {
         ...transformedState.assets,
         images,
       },
       attributes: transformedState.attributes.map((attr) => {
-        return {
-          ...attr,
-          attr_value:
-            attr.attr_name === 'style'
+        try {
+          const attrValue =
+            attr.attr_name === 'style' && typeof attr.attr_value === 'string'
               ? JSON.parse(attr.attr_value)
-              : attr.attr_value,
+              : attr.attr_value
+          return {
+            ...attr,
+            attr_value: attrValue,
+          }
+        } catch (e) {
+          console.error('error', e)
         }
+        return attr
       }),
     }
   }, [])
@@ -90,6 +73,7 @@ function App() {
           theme={theme}
           isProduction
         ></HtmlRenderer>
+        <Toaster />
       </BrowserRouter>
     </>
   )

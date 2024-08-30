@@ -56,7 +56,9 @@ export const getRecursiveDeviatingKeys = (
 
 export const trimThemeToCompare = (themes: ExtendedTheme[]) => {
   return themes?.map((th) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { spacing, unstable_sx, typography: typoIn, ...rest } = th
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { pxToRem, ...typography } = typoIn
     return {
       ...rest,
@@ -107,9 +109,11 @@ export const cleanEmptyProps = (elements: any[]) =>
   })
 
 export const trimUi = (ui: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { activeMenu, expandedTreeItems, selected, ...navigationsMenuRest } =
     ui?.navigationMenu ?? {}
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { activeElementBoundingRect, ...restSelected } = selected ?? {}
   const newNavigationsMenu = { ...navigationsMenuRest, selected: restSelected }
 
@@ -119,6 +123,7 @@ export const trimUi = (ui: any) => {
   }
 }
 const trimProject = (project: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { edited_datetime, created_datetime, owner_user_id, ...others } =
     project
   return cleanEmptyProps([others])?.[0]
@@ -131,6 +136,7 @@ export const makeComparableEditorState = (editorState: any) => {
   const elements = cleanEmptyProps(editorState.elements)
   const project = trimProject(editorState.project)
   const cssSelectors = editorState.cssSelectors?.map((css: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _type, _parentId, _userID, _userId, _id, ...rest } = css
     return { ...rest, css_selector_id: _id, css_selector_name: _userId }
   })

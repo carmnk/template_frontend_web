@@ -166,6 +166,19 @@ export const transformEditorStateToPayload = (
       return { ...prop, prop_value }
     }) || []
 
+  const attributes =
+    payload?.attributes?.map((attr) => {
+      console.log('attr', attr)
+      const attr_value = ['function', 'object'].includes(typeof attr.attr_value)
+        ? JSON.stringify(attr.attr_value)
+        : // :
+          // typeof attr.attr_value === 'string' &&
+          //   attr.attr_value.startsWith('blob:')
+          // ? attr.attr_value.slice(attr.attr_value.lastIndexOf('/') + 1)
+          attr.attr_value
+      return { ...attr, attr_value }
+    }) || []
+
   // const attributes =
   //   elementsIn
   //     ?.map?.((el, eIdx) =>
@@ -353,7 +366,7 @@ export const transformEditorStateToPayload = (
     project: projectOut as any,
     elements: elementsOut,
     // props: properties,
-    attributes: payload.attributes,
+    attributes,
     cssSelectors: cssSelectorsOut as any,
     images,
     imageFiles,

@@ -1,3 +1,4 @@
+import { ExtendedTheme } from '../muiTheme'
 import {
   EditorStateType,
   ElementKeyType,
@@ -239,7 +240,7 @@ export const transformEditorStateFromPayload = (
                 try {
                   return JSON.parse(prop.prop_value)
                 } catch (e) {
-                  console.error(e, prop)
+                  // console.error(e, prop)
                   return prop.prop_value
                 }
               })()
@@ -252,7 +253,26 @@ export const transformEditorStateFromPayload = (
             : prop.prop_value
         return { ...prop, prop_value: value }
       }) ?? [],
-    attributes: data?.attributes ?? [],
+    attributes:
+      data?.attributes?.map((attr) => {
+        const value = ['style'].includes(attr.attr_name)
+          ? (() => {
+              try {
+                return JSON.parse(attr.attr_value)
+              } catch (e) {
+                // console.error(e, attr)
+                return attr.attr_value
+              }
+            })()
+          : attr.attr_value === 'null'
+          ? null
+          : attr.attr_value === 'true'
+          ? true
+          : attr.attr_value === 'false'
+          ? false
+          : attr.attr_value
+        return { ...attr, attr_value: value }
+      }) ?? [],
     defaultTheme: defaultTheme as any,
     alternativeViewports,
     project,
@@ -267,7 +287,7 @@ export const transformEditorStateFromPayload = (
     assets: newImageAssets,
     themes,
     theme: themes.find(
-      (theme: any) => theme.palette.mode === defaultTheme
+      (theme: ExtendedTheme) => theme.palette.mode === defaultTheme
     ),
     externalApis,
     events:

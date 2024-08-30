@@ -240,18 +240,19 @@ export const useApiControllerActions = (params: ApiControllerActionsParams) => {
             }) ?? []
           : editorState?.assets.images) as ImageType[],
       }
-      const attributesWithImages = newEditorState?.attributes?.map((attr) => {
-        return attr.attr_name === 'src'
-          ? {
-              ...attr,
-              attr_value:
-                (
-                  newAssets.images.find((as) => as._id === attr.attr_value) ||
-                  {}
-                )?.src || attr.attr_value,
-            }
-          : attr
-      })
+      const attributesWithImages = newEditorState?.attributes
+      // ?.map((attr) => {
+      //   return attr.attr_name === 'src'
+      //     ? {
+      //         ...attr,
+      //         attr_value:
+      //           (
+      //             newAssets.images.find((as) => as._id === attr.attr_value) ||
+      //             {}
+      //           )?.src || attr.attr_value,
+      //       }
+      //     : attr
+      // })
 
       newEditorState.elements.forEach((el) => {
         const defaultComponentProps = components.find(
