@@ -277,7 +277,7 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
     [element, elementAttributsDict, editorState.assets.images]
   )
   const prodImageAsset = editorState.assets.images.find(
-    (img) => img.src === elementAttributsDict?.src
+    (img) => img._id === elementAttributsDict?.src
   )
   const prodFilenameExtension = prodImageAsset?.fileName?.split('.')?.pop()
   const imageSrc =
