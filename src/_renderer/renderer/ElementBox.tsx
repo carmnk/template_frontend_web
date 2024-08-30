@@ -276,7 +276,16 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
         : undefined,
     [element, elementAttributsDict, editorState.assets.images]
   )
-  const imageSrc = imageFile ? URL.createObjectURL(imageFile) : undefined
+  const prodImageAsset = editorState.assets.images.find(
+    (img) => img.src === elementAttributsDict?.src
+  )
+  const prodFilenameExtension = prodImageAsset?.fileName?.split('.')?.pop()
+  const imageSrc =
+    isProduction && elementAttributsDict?.src
+      ? `/assets/images/${elementAttributsDict?.src}.${prodFilenameExtension}`
+      : imageFile
+      ? URL.createObjectURL(imageFile)
+      : undefined
 
   return ['br', 'hr', 'img'].includes(element?._type) ? (
     <Box {...boxProps} {...linkProps} src={imageSrc} ref={elementRef} />
