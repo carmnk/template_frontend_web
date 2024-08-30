@@ -280,9 +280,11 @@ export const ElementBox = (props: PropsWithChildren<ElementBoxProps>) => {
     (img) => img._id === elementAttributsDict?.src
   )
   const prodFilenameExtension = prodImageAsset?.fileName?.split('.')?.pop()
+
   const imageSrc =
     isProduction && elementAttributsDict?.src
-      ? `/assets/images/${elementAttributsDict?.src}.${prodFilenameExtension}`
+      ? // this will only work for gh pages with project in subfolder (rel. to root)!!!
+        `/${editorState.project.project_name}/assets/images/${elementAttributsDict?.src}.${prodFilenameExtension}`
       : imageFile
       ? URL.createObjectURL(imageFile)
       : undefined
