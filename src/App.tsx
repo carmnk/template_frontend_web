@@ -1,82 +1,69 @@
-import React from 'react'
-import { useMemo } from 'react'
-import { HtmlRenderer } from './_renderer/renderer/HtmlRenderer'
-import { useEditorController } from './_renderer/editorController/editorController'
-import appData from './app_data.json'
-import { BrowserRouter } from 'react-router-dom'
-import { transformEditorStateFromPayload } from './_renderer/apiController/transformEditorDbState'
-import { baseComponents } from './_renderer/editorComponents/baseComponents'
-import { defaultEditorState } from './_renderer/editorController/editorState'
-import packageJson from '../package.json'
-import { Toaster } from 'react-hot-toast'
+import React from "react";
+import { Route, Routes } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import appData from "./app_data.json";
+import { defaultEditorState, useEditorRendererController } from "@cmk/fe_utils";
+import { baseComponents, transformEditorStateFromPayload } from "@cmk/fe_utils";
+import { AppHtmlRenderer } from "./AppHtmlRenderer";
 
-// console.log('appData', appData)
+const transformedState = transformEditorStateFromPayload(
+  appData as any,
+  defaultEditorState(),
+  baseComponents
+);
+const appDataAdj = {
+  ...transformedState,
+  attributes: transformedState.attributes.map((attr) => {
+    try {
+      const attrValue =
+        attr.attr_name === "style" && typeof attr.attr_value === "string"
+          ? JSON.parse(attr.attr_value)
+          : attr.attr_value;
+      return {
+        ...attr,
+        attr_value: attrValue,
+      };
+    } catch (e) {
+      console.error("error", e);
+    }
+    return attr;
+  }),
+};
 
 function App() {
-  const appDataAdj = useMemo(() => {
-    const transformedState = transformEditorStateFromPayload(
-      appData as any,
-      defaultEditorState(),
-      baseComponents
-    )
-
-    // adjust images -> images are currently supposed to be in the json - imageFiles.[n].image
-    //CLOUD SOLutioN BACK !!!
-    const images = transformedState.assets.images
-
-    // this way is for base64 pictures
-    // const adjImages = transformedState.assets.images.map((img) => ({
-    //   ...img,
-    //   image:
-    //     appData?.imageFiles?.find?.((file) => file.asset_id === img._id)
-    //       ?.image || null,
-    // }))
-    return {
-      ...transformedState,
-      assets: {
-        ...transformedState.assets,
-        images,
-      },
-      attributes: transformedState.attributes.map((attr) => {
-        try {
-          const attrValue =
-            attr.attr_name === 'style' && typeof attr.attr_value === 'string'
-              ? JSON.parse(attr.attr_value)
-              : attr.attr_value
-          return {
-            ...attr,
-            attr_value: attrValue,
-          }
-        } catch (e) {
-          console.error('error', e)
-        }
-        return attr
-      }),
-    }
-  }, [])
-
-  console.log('IN', appData)
-  const editorController = useEditorController({
+  const {
+    editorState,
+    selectedElement,
+    setEditorState,
+    selectedPageElements,
+    currentViewportElements,
+    appController,
+    COMPONENT_MODELS,
+  } = useEditorRendererController({
     initialEditorState: appDataAdj as any,
-    // injections: {
-    //   components: [...baseComponents, buttonEditorComponentDef],
-    // },
-  })
-  console.log('OUT', editorController)
-  const theme = editorController.editorState.theme
+  });
 
   return (
     <>
-      <BrowserRouter basename={packageJson?.homepage}>
-        <HtmlRenderer
-          editorController={editorController}
-          theme={theme}
-          isProduction
-        ></HtmlRenderer>
-        <Toaster />
-      </BrowserRouter>
+      <Routes>
+        <Route
+          path="/*"
+          element={
+            <AppHtmlRenderer
+              editorState={editorState}
+              setEditorState={setEditorState}
+              selectedElement={selectedElement}
+              selectedPageElements={selectedPageElements}
+              currentViewportElements={currentViewportElements}
+              appController={appController}
+              COMPONENT_MODELS={COMPONENT_MODELS}
+            />
+          }
+        ></Route>
+      </Routes>
+      <Toaster />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
