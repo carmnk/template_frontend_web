@@ -1,32 +1,50 @@
 import React, { Dispatch, SetStateAction } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { EditorStateType, HtmlRenderer } from "@cmk/fe_utils";
+import {
+  EditorStateType,
+  HtmlRenderer,
+  useEditorRendererController,
+} from "@cmk/fe_utils";
 import { EditorRendererControllerType } from "@cmk/fe_utils";
 
 export type AppHtmlRendererProps = {
-  editorState: EditorStateType;
-  setEditorState: Dispatch<SetStateAction<EditorStateType>>;
-  selectedElement: EditorRendererControllerType<[]>["selectedElement"];
-  selectedPageElements: EditorRendererControllerType<
-    []
-  >["selectedPageElements"];
-  currentViewportElements: EditorRendererControllerType<
-    []
-  >["currentViewportElements"];
-  appController: EditorRendererControllerType<[]>["appController"];
-  COMPONENT_MODELS: EditorRendererControllerType<[]>["COMPONENT_MODELS"];
+  // editorState: EditorStateType;
+  // setEditorState: Dispatch<SetStateAction<EditorStateType>>;
+  // selectedElement: EditorRendererControllerType<[]>["selectedElement"];
+  // selectedPageElements: EditorRendererControllerType<
+  //   []
+  // >["selectedPageElements"];
+  // currentViewportElements: EditorRendererControllerType<
+  //   []
+  // >["currentViewportElements"];
+  // appController: EditorRendererControllerType<[]>["appController"];
+  // COMPONENT_MODELS: EditorRendererControllerType<[]>["COMPONENT_MODELS"];
+  appData: any;
 };
 
 export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
+  const { appData } = props;
+  // const {
+  //   editorState,
+  //   setEditorState,
+  //   selectedElement,
+  //   selectedPageElements,
+  //   currentViewportElements,
+  //   appController,
+  //   COMPONENT_MODELS,
+  // } = props;
+
   const {
     editorState,
-    setEditorState,
     selectedElement,
+    setEditorState,
     selectedPageElements,
     currentViewportElements,
     appController,
     COMPONENT_MODELS,
-  } = props;
+  } = useEditorRendererController({
+    initialEditorState: appData,
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,6 +58,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
 
   return (
     <HtmlRenderer
+      uiActions={null as any}
       editorState={editorState}
       setEditorState={setEditorState}
       selectedElement={selectedElement}
