@@ -9,4 +9,9 @@ const homepage = pjson.homepage
 export default defineConfig({
   plugins: [(react as any)()],
   base: homepage,
-} as any)
+  build: {
+    sourcemap: true,
+    reportCompressedSize: true,
+    
+  }
+})

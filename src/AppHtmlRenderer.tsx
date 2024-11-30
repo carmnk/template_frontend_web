@@ -1,11 +1,10 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React, { useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  EditorStateType,
+  ComponentDefType,
   HtmlRenderer,
   useEditorRendererController,
 } from "@cmk/fe_utils";
-import { EditorRendererControllerType } from "@cmk/fe_utils";
 
 export type AppHtmlRendererProps = {
   // editorState: EditorStateType;
@@ -20,10 +19,12 @@ export type AppHtmlRendererProps = {
   // appController: EditorRendererControllerType<[]>["appController"];
   // COMPONENT_MODELS: EditorRendererControllerType<[]>["COMPONENT_MODELS"];
   appData: any;
+  mdiIcons: Record<string, string>;
 };
 
 export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
-  const { appData } = props;
+  const { appData, mdiIcons } = props;
+  // const themeIn = useTheme();
   // const {
   //   editorState,
   //   setEditorState,
@@ -36,7 +37,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
 
   const {
     editorState,
-    selectedElement,
+    // selectedElement,
     setEditorState,
     selectedPageElements,
     currentViewportElements,
@@ -45,6 +46,21 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
   } = useEditorRendererController({
     initialEditorState: appData,
   });
+
+  const getIcon = useCallback(
+    async (name: string) => {
+      if (!mdiIcons[name]) {
+        console.warn("getIcon", name, "not found");
+        return null;
+      }
+      console.log("getIcon", name, mdiIcons[name]);
+      return mdiIcons[name];
+    },
+    [mdiIcons]
+  );
+
+  
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,17 +77,18 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
       uiActions={null as any}
       editorState={editorState}
       setEditorState={setEditorState}
-      selectedElement={selectedElement}
       selectedPageElements={selectedPageElements}
       currentViewportElements={currentViewportElements}
       appController={appController}
       // actions={actions}
-      COMPONENT_MODELS={COMPONENT_MODELS}
+      COMPONENT_MODELS={COMPONENT_MODELS as ComponentDefType[]}
       OverlayComponent={null as any}
       navigate={navigate}
       pageName={adjPathName}
       theme={theme}
       isProduction
+      importIconByName={getIcon as any}
     />
   );
+
 };
