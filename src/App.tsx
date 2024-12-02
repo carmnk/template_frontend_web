@@ -5,6 +5,7 @@ import { ComponentDefType, defaultEditorState } from "@cmk/fe_utils";
 import { baseComponents, transformEditorStateFromPayload } from "@cmk/fe_utils";
 import { AppHtmlRenderer } from "./AppHtmlRenderer";
 import axios from "axios";
+import packageJson from "../package.json";
 
 const prepareSerializesState = (appData: any) => {
   console.log(
@@ -42,10 +43,12 @@ export const App = () => {
   const [appData, setAppData] = React.useState<any>(null);
   const [iconData, setIconData] = React.useState<Record<string, string>>({});
   useEffect(() => {
+    const basePath = packageJson.homepage;
     const fetchAppData = async () => {
       try {
         console.log("fetching app data");
-        const response = await axios.get("/app_data.json");
+        const url = `${basePath || "/"}app_data.json`;
+        const response = await axios.get(url);
         const data = response.data;
         if (!data) {
           throw new Error("No data found");
@@ -61,7 +64,8 @@ export const App = () => {
     const fetchIconData = async () => {
       try {
         console.log("fetching icon data");
-        const response = await axios.get("/mdi_icons.json");
+        const url = `${basePath || "/"}mdi_icons.json`;
+        const response = await axios.get(url);
         const data = response.data;
         if (!data) {
           throw new Error("No data found");
