@@ -43,7 +43,7 @@ export const App = () => {
   const [appData, setAppData] = React.useState<any>(null);
   const [iconData, setIconData] = React.useState<Record<string, string>>({});
   useEffect(() => {
-    const basePath = packageJson.homepage;
+    const basePath = packageJson.homepage ? packageJson.homepage + "/" : "/";
     const fetchAppData = async () => {
       try {
         console.log("fetching app data");
