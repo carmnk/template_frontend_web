@@ -1,87 +1,102 @@
-import React, { useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useCallback, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  ComponentDefType,
+  BASE_ELEMENT_MODELS,
+  ElementModel,
   HtmlRenderer,
   useEditorRendererController,
-} from "@cmk/fe_utils";
+} from '@cmk/fe_utils'
+import axios from 'axios'
 
 export type AppHtmlRendererProps = {
-  // editorState: EditorStateType;
-  // setEditorState: Dispatch<SetStateAction<EditorStateType>>;
-  // selectedElement: EditorRendererControllerType<[]>["selectedElement"];
-  // selectedPageElements: EditorRendererControllerType<
-  //   []
-  // >["selectedPageElements"];
-  // currentViewportElements: EditorRendererControllerType<
-  //   []
-  // >["currentViewportElements"];
-  // appController: EditorRendererControllerType<[]>["appController"];
-  // COMPONENT_MODELS: EditorRendererControllerType<[]>["COMPONENT_MODELS"];
-  appData: any;
-  mdiIcons: Record<string, string>;
-};
+  appData: any
+  mdiIcons: Record<string, string>
+}
 
 export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
-  const { appData, mdiIcons } = props;
-  // const themeIn = useTheme();
-  // const {
-  //   editorState,
-  //   setEditorState,
-  //   selectedElement,
-  //   selectedPageElements,
-  //   currentViewportElements,
-  //   appController,
-  //   COMPONENT_MODELS,
-  // } = props;
+  const { appData } = props
 
   const {
     editorState,
     // selectedElement,
     setEditorState,
-    selectedPageElements,
     currentViewportElements,
     appController,
-    COMPONENT_MODELS,
   } = useEditorRendererController({
     initialEditorState: appData,
-  });
+  })
+
+  const [iconData, setIconData] = React.useState<Record<string, string>>({})
+  const [ui, setUi] = React.useState<any>({ initialized: false })
+  useEffect(() => {
+    const basePath = window.location.href ?? '/'
+
+    const fetchIconData = async () => {
+      try {
+        console.log('fetching icon data', basePath)
+        const url = `${basePath || '/'}mdi_icons.json`
+        const response = await axios.get(url)
+        const data = response.data
+        if (!data) {
+          throw new Error('No data found')
+        }
+        console.log('response', response, data)
+        const iconData = data
+        setIconData(iconData)
+      } catch (e) {
+        console.error('error', e)
+      }
+      setUi((prev: any) => ({
+        ...prev,
+        initialized: true,
+      }))
+    }
+    fetchIconData()
+  }, [])
 
   const getIcon = useCallback(
     async (name: string) => {
-      if (!mdiIcons[name]) {
-        console.warn("getIcon", name, "not found");
-        return null;
+      if (!iconData[name]) {
+        console.warn('getIcon', name, 'not found')
+        return null
       }
-      console.log("getIcon", name, mdiIcons[name]);
-      return mdiIcons[name];
+      return iconData[name]
     },
-    [mdiIcons]
-  );
+    [iconData]
+  )
 
-  
-
-
-  const navigate = useNavigate();
-  const location = useLocation();
-  const theme = editorState.theme;
+  const navigate = useNavigate()
+  const location = useLocation()
+  const theme = editorState.theme
   const adjPathName =
-    location.pathname === "/"
-      ? "index"
-      : location.pathname.startsWith("/")
+    location.pathname === '/'
+      ? 'index'
+      : location.pathname.startsWith('/')
       ? location.pathname.slice(1)
-      : location.pathname;
+      : location.pathname
 
-  return (
+  console.log('PATH', adjPathName)
+
+  useEffect(() => {
+    setEditorState((current) => ({
+      ...current,
+      ui: {
+        ...current.ui,
+        selected: { ...current.ui.selected, page: adjPathName },
+      },
+    }))
+  }, [adjPathName])
+
+  return ui.initialized ? (
     <HtmlRenderer
       uiActions={null as any}
       editorState={editorState}
       setEditorState={setEditorState}
-      selectedPageElements={selectedPageElements}
       currentViewportElements={currentViewportElements}
       appController={appController}
       // actions={actions}
-      COMPONENT_MODELS={COMPONENT_MODELS as ComponentDefType[]}
+
+      ELEMENT_MODELS={BASE_ELEMENT_MODELS as ElementModel[]}
       OverlayComponent={null as any}
       navigate={navigate}
       pageName={adjPathName}
@@ -89,6 +104,5 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
       isProduction
       importIconByName={getIcon as any}
     />
-  );
-
-};
+  ) : null
+}
