@@ -33,7 +33,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
 
     const fetchIconData = async () => {
       try {
-        console.log('fetching icon data', basePath)
+        console.log('fetching icon data, basepath="', basePath + '"')
         const url = `${basePath || '/'}mdi_icons.json`
         const response = await axios.get(url)
         const data = response.data
