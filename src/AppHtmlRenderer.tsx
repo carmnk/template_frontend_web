@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import {
   BASE_ELEMENT_MODELS,
   ElementModel,
@@ -7,6 +7,8 @@ import {
   useEditorRendererController,
 } from '@cmk/fe_utils'
 import axios from 'axios'
+
+declare const BASE_URL: string
 
 export type AppHtmlRendererProps = {
   appData: any
@@ -65,27 +67,49 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
     [iconData]
   )
 
-  const navigate = useNavigate()
+  const navigateRaw = useNavigate()
+  const navigate = useCallback(
+    (to: string) => {
+      const toAdj = to.startsWith('/') ? to.slice(1) : to
+      const distination = BASE_URL + toAdj
+      console.log('navigate', to, 'toAdj', toAdj, 'distination', distination)
+      navigateRaw(distination)
+    },
+    [navigateRaw]
+  )
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const forcedLocation = searchParams.get('location')
+
   const theme = editorState.theme
-  const adjPathName =
-    location.pathname === '/'
-      ? 'index'
-      : location.pathname.startsWith('/')
-      ? location.pathname.slice(1)
-      : location.pathname
+  // const amountSlashedInPathNameRaw = location.pathname.matchAll(/\//g)
+  // const amountSlashedInPathName = amountSlashedInPathNameRaw
+  //   ? [...amountSlashedInPathNameRaw].filter((val) => val).length
+  //   : 0
 
-  console.log('PATH', adjPathName)
+  const adjPathName = forcedLocation
+    ? forcedLocation
+    : location.pathname === '/'
+    ? 'index'
+    : location.pathname.replace(BASE_URL, '') || 'index'
 
-  useEffect(() => {
-    setEditorState((current) => ({
-      ...current,
-      ui: {
-        ...current.ui,
-        selected: { ...current.ui.selected, page: adjPathName },
-      },
-    }))
-  }, [adjPathName])
+  console.log(
+    'PATH',
+    'orig',
+    location.pathname,
+    'trimmed',
+    location.pathname.replace(BASE_URL, '') || 'index'
+  )
+
+  // useEffect(() => {
+  //   setEditorState((current) => ({
+  //     ...current,
+  //     ui: {
+  //       ...current.ui,
+  //       selected: { ...current.ui.selected, page: adjPathName },
+  //     },
+  //   }))
+  // }, [adjPathName])
 
   return ui.initialized ? (
     <HtmlRenderer
