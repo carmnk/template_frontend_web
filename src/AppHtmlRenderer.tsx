@@ -23,6 +23,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
     // selectedElement,
     setEditorState,
     currentViewportElements,
+    allElements,
     appController,
   } = useEditorRendererController({
     initialEditorState: appData,
@@ -113,6 +114,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
 
   return ui.initialized ? (
     <HtmlRenderer
+      allElements={allElements}
       uiActions={null as any}
       editorState={editorState}
       setEditorState={setEditorState}
