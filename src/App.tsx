@@ -48,7 +48,7 @@ const prepareSerializesState = (appData: any) => {
 
 export const App = () => {
   const [appData, setAppData] = React.useState<any>(null)
-  const [iconData, setIconData] = React.useState<Record<string, string>>({})
+
   useEffect(() => {
     const basePath =
       packageJson.homepage && packageJson.homepage !== '/'
@@ -97,7 +97,9 @@ export const App = () => {
     appData && (
       <>
         {/* Routing is done by the Renderer */}
-        <AppHtmlRenderer appData={appData} mdiIcons={iconData} />
+        <AppHtmlRenderer appData={appData} 
+        // mdiIcons={iconData} 
+        />
         <Toaster />
       </>
     )

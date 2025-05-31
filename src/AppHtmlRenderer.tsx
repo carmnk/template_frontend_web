@@ -12,7 +12,7 @@ declare const BASE_URL: string
 
 export type AppHtmlRendererProps = {
   appData: any
-  mdiIcons: Record<string, string>
+  // mdiIcons: Record<string, string>
 }
 
 export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
@@ -93,14 +93,6 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
     : location.pathname === '/'
     ? 'index'
     : location.pathname.replace(BASE_URL, '') || 'index'
-
-  console.log(
-    'PATH',
-    'orig',
-    location.pathname,
-    'trimmed',
-    location.pathname.replace(BASE_URL, '') || 'index'
-  )
 
   // useEffect(() => {
   //   setEditorState((current) => ({
