@@ -12,7 +12,6 @@ declare const BASE_URL: string
 
 export type AppHtmlRendererProps = {
   appData: any
-  // mdiIcons: Record<string, string>
 }
 
 export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
@@ -20,7 +19,6 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
 
   const {
     editorState,
-    // selectedElement,
     setEditorState,
     currentViewportElements,
     allElements,
@@ -31,6 +29,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
 
   const [iconData, setIconData] = React.useState<Record<string, string>>({})
   const [ui, setUi] = React.useState<any>({ initialized: false })
+
   useEffect(() => {
     const basePath = window.location.href ?? '/'
 
@@ -112,8 +111,6 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
       setEditorState={setEditorState}
       currentViewportElements={currentViewportElements}
       appController={appController}
-      // actions={actions}
-
       ELEMENT_MODELS={BASE_ELEMENT_MODELS as ElementModel[]}
       OverlayComponent={null as any}
       navigate={navigate}

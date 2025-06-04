@@ -73,24 +73,7 @@ export const App = () => {
         console.error('error', e)
       }
     }
-    // const fetchIconData = async () => {
-    //   try {
-    //     console.log("fetching icon data");
-    //     const url = `${basePath || "/"}mdi_icons.json`;
-    //     const response = await axios.get(url);
-    //     const data = response.data;
-    //     if (!data) {
-    //       throw new Error("No data found");
-    //     }
-    //     console.log("response", response, data);
-    //     const iconData = data;
-    //     setIconData(iconData);
-    //   } catch (e) {
-    //     console.error("error", e);
-    //   }
-    // };
     fetchAppData()
-    // fetchIconData();
   }, [])
 
   return (
