@@ -82,10 +82,6 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
   const forcedLocation = searchParams.get('location')
 
   const theme = editorState.theme
-  // const amountSlashedInPathNameRaw = location.pathname.matchAll(/\//g)
-  // const amountSlashedInPathName = amountSlashedInPathNameRaw
-  //   ? [...amountSlashedInPathNameRaw].filter((val) => val).length
-  //   : 0
 
   const adjPathName = forcedLocation
     ? forcedLocation
@@ -93,15 +89,6 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
     ? 'index'
     : location.pathname.replace(BASE_URL, '') || 'index'
 
-  // useEffect(() => {
-  //   setEditorState((current) => ({
-  //     ...current,
-  //     ui: {
-  //       ...current.ui,
-  //       selected: { ...current.ui.selected, page: adjPathName },
-  //     },
-  //   }))
-  // }, [adjPathName])
 
   return ui.initialized ? (
     <HtmlRenderer
