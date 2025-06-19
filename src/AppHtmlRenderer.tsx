@@ -31,7 +31,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
   const [ui, setUi] = React.useState<any>({ initialized: false })
 
   useEffect(() => {
-    const basePath = window.location.href ?? '/'
+    const basePath = BASE_URL ?? '/'
 
     const fetchIconData = async () => {
       try {
