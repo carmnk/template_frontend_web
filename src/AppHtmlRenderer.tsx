@@ -36,7 +36,11 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
     const fetchIconData = async () => {
       try {
         console.log('fetching icon data, basepath="', basePath + '"')
-        const url = `${basePath || '/'}mdi_icons.json`
+        const basePathAdj =
+          basePath && basePath !== '/' && basePath.slice(-1)[0] !== '/'
+            ? basePath + '/'
+            : basePath ?? '/'
+        const url = `${basePathAdj}mdi_icons.json`
         const response = await axios.get(url)
         const data = response.data
         if (!data) {
@@ -88,7 +92,6 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
     : location.pathname === '/'
     ? 'index'
     : location.pathname.replace(BASE_URL, '') || 'index'
-
 
   return ui.initialized ? (
     <HtmlRenderer
