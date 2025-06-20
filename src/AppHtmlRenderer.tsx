@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import {
   BASE_ELEMENT_MODELS,
+  EditorStateDbDataType,
   ElementModel,
   HtmlRenderer,
   useEditorRendererController,
@@ -11,7 +12,7 @@ import axios from 'axios'
 declare const BASE_URL: string
 
 export type AppHtmlRendererProps = {
-  appData: any
+  appData: EditorStateDbDataType
 }
 
 export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
@@ -24,7 +25,7 @@ export const AppHtmlRenderer = (props: AppHtmlRendererProps) => {
     allElements,
     appController,
   } = useEditorRendererController({
-    initialEditorState: appData,
+    initialEditorState: appData as any,
   })
 
   const [iconData, setIconData] = React.useState<Record<string, string>>({})

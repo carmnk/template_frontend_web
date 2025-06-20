@@ -5,6 +5,7 @@ import { BASE_ELEMENT_MODELS, deserializeEditorState } from '@cmk/fe_utils'
 import { AppHtmlRenderer } from './AppHtmlRenderer'
 import axios from 'axios'
 import packageJson from '../package.json'
+import { BrowserRouter } from 'react-router-dom'
 
 const prepareSerializesState = (appData: any) => {
   // console.log(
@@ -78,13 +79,10 @@ export const App = () => {
 
   return (
     appData && (
-      <>
-        {/* Routing is done by the Renderer */}
-        <AppHtmlRenderer appData={appData} 
-        // mdiIcons={iconData} 
-        />
+      <BrowserRouter basename={packageJson?.homepage}>
+        <AppHtmlRenderer appData={appData} />
         <Toaster />
-      </>
+      </BrowserRouter>
     )
   )
 }
